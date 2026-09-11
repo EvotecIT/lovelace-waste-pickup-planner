@@ -2,3 +2,5 @@ node_modules/
 release/
 .validation/
 .DS_Store
+.playwright-cli/
+output/

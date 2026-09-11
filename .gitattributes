@@ -1,0 +1,2 @@
+# Bundled Lit contains significant trailing whitespace in template literals.
+/waste-pickup-planner-card.js linguist-generated=true whitespace=-blank-at-eol

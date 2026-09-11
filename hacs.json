@@ -1,0 +1,6 @@
+{
+  "name": "Waste Pickup Planner",
+  "render_readme": true,
+  "filename": "waste-pickup-planner-card.js",
+  "homeassistant": "2026.9.1"
+}

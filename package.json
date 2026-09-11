@@ -1,0 +1,41 @@
+{
+  "name": "lovelace-waste-pickup-planner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Date-grouped waste collection cards and badges for Home Assistant.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "pack": "npm run build && node pack-release.mjs",
+    "dev": "node build.mjs --watch",
+    "serve": "node server.mjs",
+    "preview": "npm run build && node server.mjs",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "check": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "waste-collection",
+    "custom-card",
+    "badge"
+  ],
+  "author": "EvotecIT",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EvotecIT/lovelace-waste-pickup-planner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EvotecIT/lovelace-waste-pickup-planner/issues"
+  },
+  "homepage": "https://github.com/EvotecIT/lovelace-waste-pickup-planner#readme",
+  "dependencies": {
+    "lit": "^3.3.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}
