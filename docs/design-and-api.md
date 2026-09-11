@@ -30,11 +30,11 @@ Each explicitly selected entity is a separate source. Deduplication uses source 
 
 The visible range starts today and ends before today + `days_to_show`. Integration-supplied today/cutoff behavior is preserved by using only the records the sensor publishes. The controller checks the home date every minute and refreshes after the tab becomes visible again.
 
-A weak map keyed by the authenticated HA connection shares calendar reads between components. Entries include the entity, query range and entity update stamp, with a one-minute cache and a bounded key count. The request range is widened to cover all local-day offsets; the projection applies the exact home-date range.
+A weak map keyed by the authenticated HA connection shares calendar reads between components. Entries include the entity, query range and entity update stamp. Pending requests remain shared; completed results have a one-minute cache. Pending entries are not evicted to make room for new requests, and the cache admits at most 100 entries per connection. The request range is widened to cover all local-day offsets; the projection applies the exact home-date range.
 
 Removal invalidates pending publications and removes the component timer/listener. HA's supplied `callApi` owns the actual transport, so an already-issued request may finish after removal. A new connection or source configuration clears the local stale-data cache.
 
-States are loading, ready, empty, unavailable and stale. A failed source can retain its last successful events in memory, accompanied by an explicit stale notice. `last_update` is shown only when supplied by a structured sensor; entity `last_updated` is used for request invalidation, never presented as provider freshness.
+States are loading, ready, empty, unavailable and stale. A failed source retains its last successful events and provider timestamp in memory, accompanied by an explicit stale notice. `last_update` is shown only when supplied by a structured sensor; entity `last_updated` is used for request invalidation, never presented as provider freshness.
 
 ## Presentation and host integration
 

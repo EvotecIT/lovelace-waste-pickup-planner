@@ -199,24 +199,20 @@ export class WastePickupPlannerCard extends LitElement {
         <button ?disabled=${page + 1 === pageCount} @click=${() => this.changeDetailsPage(page + 1)}>${t.nextPage}</button>
       </nav>` : nothing}
     </dialog>` : nothing;
-    if (this.badge)
-      return html`<button
-          class="badge"
-          aria-label=${`${title}: ${date}. ${names}${state === "stale" ? `. ${t.stale}` : ""}`}
-          title=${names}
-          @click=${this.activate}
-        >
-          <ha-icon
-            aria-hidden="true"
-            .icon=${state === "stale" || state === "unavailable" ? "mdi:alert-circle-outline" : "mdi:trash-can-outline"}
-          ></ha-icon
-          ><span class="badge-copy"
-            ><strong>${next ? date : title}</strong
-            ><small
-              >${state === "stale" ? `${t.staleBadge} · ` : ""}${names}</small
-            ></span
-          ></button
-        >${details}`;
+    if (this.badge) {
+      const description = next
+        ? next.events.slice(0, 6).map(e => e.label).join(" · ") +
+          (next.events.length > 6 ? ` · +${new Intl.NumberFormat(locale).format(next.events.length - 6)} ${t.more}` : "")
+        : message;
+      const label = `${title}: ${date}. ${description}${state === "stale" ? `. ${t.stale}` : ""}`;
+      const content = html`<ha-icon aria-hidden="true"
+        .icon=${state === "stale" || state === "unavailable" ? "mdi:alert-circle-outline" : "mdi:trash-can-outline"}></ha-icon>
+        <span class="badge-copy"><strong>${next ? date : title}</strong>
+        <small>${state === "stale" ? `${t.staleBadge} · ` : ""}${names}</small></span>`;
+      return this.config.tap_action?.action === "none"
+        ? html`<div class="badge" role="img" aria-label=${label} title=${description}>${content}</div>`
+        : html`<button class="badge" aria-label=${label} title=${description} @click=${this.activate}>${content}</button>${details}`;
+    }
     return html`<ha-card
         ><section class=${`surface ${this.config.layout}`}>
           <div class="heading">

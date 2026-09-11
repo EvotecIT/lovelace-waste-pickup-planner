@@ -53,7 +53,7 @@ max_groups: 4
 - **Compact** shows the next date, up to six collection names, and a count of any additional collections.
 - **Hero** adds optional bin artwork and upcoming date groups.
 - **Schedule** shows date-grouped rows.
-- **Badge** shows the next date and collection names. Add it to a view's badges:
+- **Badge** shows the next date and collection names or a count. Its accessible description includes up to six complete names; the default action opens all collections. Add it to a view's badges:
 
 ```yaml
 type: custom:waste-pickup-planner-badge
@@ -107,7 +107,7 @@ Cards inherit Home Assistant's card background, text, divider, radius, shadow, a
 
 An empty date range is distinct from an unavailable source. If a source fails after loading, the card keeps its last schedule in memory and labels it as potentially out of date. Reloading the page clears that cache. A state-change timestamp is never presented as a provider refresh time.
 
-Calendar reads are shared across instances on the same HA connection for one minute. Detached components stop publishing results and remove their timers/listeners; requests already issued through HA's `callApi` may finish in the background.
+Calendar reads are shared across instances on the same HA connection while pending and for one minute after completion. Detached components stop publishing results and remove their timers/listeners; requests already issued through HA's `callApi` may finish in the background.
 
 ## Native Home Assistant alternatives
 

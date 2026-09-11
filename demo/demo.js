@@ -15,8 +15,13 @@ customElements.define(
 );
 let connection = {};
 const cards = [];
+const timeZone = "Europe/Warsaw";
 const day = (offset) => {
-  const d = new Date();
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone, year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const part = key => parts.find(p => p.type === key).value;
+  const d = new Date(`${part("year")}-${part("month")}-${part("day")}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + offset);
   return d.toISOString().slice(0, 10);
 };
@@ -73,7 +78,7 @@ function hass(state = "ready") {
       "Household packaging, cartons and non-recyclable mixed materials with a very long collection name";
   return {
     connection,
-    config: { time_zone: "Europe/Warsaw" },
+    config: { time_zone: timeZone },
     locale: { language: state === "pl" ? "pl" : "en" },
     states: {
       "sensor.waste_schedule": {

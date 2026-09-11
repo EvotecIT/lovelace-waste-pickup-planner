@@ -11,7 +11,7 @@ import type {
 } from "./types.ts";
 export class ScheduleController {
   private generation = 0;
-  private cache = new Map<string, CollectionEvent[]>();
+  private cache = new Map<string, { events: CollectionEvent[]; fetchedAt?: string }>();
   private connection?: object;
   private timeZone?: string;
   reset(): void {
@@ -55,6 +55,7 @@ export class ScheduleController {
           )
             throw new Error(`${id} is unavailable.`);
           let entries: CollectionEvent[];
+          let fetchedAt: string | undefined;
           if (id.startsWith("calendar."))
             entries = calendarEvents(
               await readCalendar(hass, id, rangeStart, rangeEnd),
@@ -70,10 +71,11 @@ export class ScheduleController {
             if (result.invalid)
               throw new Error(`${id} contains invalid collection records.`);
             entries = result.events;
-            if (result.fetchedAt) updates.push(result.fetchedAt);
+            fetchedAt = result.fetchedAt;
           }
           if (generation !== this.generation) return;
-          this.cache.set(id, entries);
+          this.cache.set(id, { events: entries, fetchedAt });
+          if (fetchedAt) updates.push(fetchedAt);
           events.push(...entries);
           successes++;
         } catch (error) {
@@ -84,8 +86,12 @@ export class ScheduleController {
               ? error.message
               : `${id} could not be loaded.`,
           );
-          if (this.cache.has(id)) cachedSources++;
-          events.push(...(this.cache.get(id) ?? []));
+          const cached = this.cache.get(id);
+          if (cached) {
+            cachedSources++;
+            events.push(...cached.events);
+            if (cached.fetchedAt) updates.push(cached.fetchedAt);
+          }
         }
       }),
     );

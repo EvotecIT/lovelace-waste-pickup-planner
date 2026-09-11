@@ -371,3 +371,67 @@ test("multiple provider timestamps select the chronologically oldest offset valu
   await controller.update(hass, validateConfig({type: "x", entities: Object.keys(hass.states)}), value => {snapshot = value;});
   assert.equal(snapshot.fetchedAt, older);
 });
+
+test("stale sensor timestamps stay with cached events and clear on recovery", async () => {
+  const controller = new ScheduleController(), old = "2026-09-10T12:00:00Z", newer = "2026-09-11T12:00:00Z";
+  const hass = {connection: {}, config: {time_zone: "UTC"}, states: {
+    "sensor.waste": entity({upcoming: [], last_update: old}),
+    "sensor.second": {...entity({upcoming: [], last_update: newer}), entity_id: "sensor.second"}
+  }} as HomeAssistant;
+  const config = validateConfig({type: "x", entities: Object.keys(hass.states)});
+  let snapshot!: ScheduleSnapshot;
+  const publish = (value: ScheduleSnapshot) => {snapshot = value;};
+  await controller.update(hass, config, publish);
+  hass.states["sensor.waste"] = entity({}, "unavailable");
+  await controller.update(hass, config, publish);
+  assert.equal(snapshot.status, "stale");
+  assert.equal(snapshot.fetchedAt, old);
+  hass.states["sensor.second"].state = "unavailable";
+  await controller.update(hass, config, publish);
+  assert.equal(snapshot.fetchedAt, old);
+  hass.states["sensor.waste"] = entity({upcoming: []});
+  hass.states["sensor.second"] = {...entity({upcoming: []}), entity_id: "sensor.second"};
+  await controller.update(hass, config, publish);
+  assert.equal(snapshot.fetchedAt, undefined);
+});
+
+test("slow calendar reads remain shared and expire one minute after settlement", async t => {
+  let now = 0, calls = 0, finish!: (value: unknown) => void;
+  t.mock.method(Date, "now", () => now);
+  const hass = {connection: {}, states: {"calendar.x": {last_updated: "first"}},
+    callApi: () => {calls++; return new Promise(resolve => {finish = resolve;});}} as unknown as HomeAssistant;
+  const first = readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01");
+  now = 180000;
+  assert.equal(readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01"), first);
+  assert.equal(calls, 1);
+  finish([]);await first;
+  now += 59999;
+  assert.equal(readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01"), first);
+  now++;
+  const second = readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01");
+  assert.notEqual(second, first);
+  hass.states["calendar.x"].last_updated = "changed";
+  assert.equal(readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01"), second);
+  finish([]);await second;
+  const third = readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01");
+  assert.notEqual(third, second);
+  finish([]);await third;
+  assert.equal(calls, 3);
+});
+
+test("calendar cache pressure cannot evict pending requests and multiply transport work", async () => {
+  let calls = 0;
+  const finish: Array<(value: unknown) => void> = [];
+  const hass = {connection: {}, states: {}, callApi: () => {
+    calls++;return new Promise(resolve => finish.push(resolve));
+  }} as unknown as HomeAssistant;
+  const requests = Array.from({length: 100}, (_, i) => readCalendar(hass, `calendar.x${i}`, "2026-09-01", "2026-10-01"));
+  await assert.rejects(readCalendar(hass, "calendar.overflow", "2026-09-01", "2026-10-01"), /pending/);
+  assert.equal(readCalendar(hass, "calendar.x0", "2026-09-01", "2026-10-01"), requests[0]);
+  assert.equal(calls, 100);
+  finish[0]([]);await requests[0];
+  const next = readCalendar(hass, "calendar.overflow", "2026-09-01", "2026-10-01");
+  assert.equal(calls, 101);
+  finish.forEach(resolve => resolve([]));
+  await Promise.all([...requests, next]);
+});

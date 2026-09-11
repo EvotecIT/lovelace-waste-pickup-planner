@@ -199,6 +199,7 @@ export const styles = css`
   }
   .badge {
     display: flex;
+    width: fit-content;
     align-items: center;
     gap: 10px;
     border: 1px solid var(--ha-card-border-color, var(--divider-color, #ddd));
