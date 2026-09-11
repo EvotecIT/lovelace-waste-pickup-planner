@@ -285,3 +285,49 @@ test("date ranges exclude the end date and hidden overrides remove only their ty
     "Paper",
   );
 });
+
+
+test("long labels and type IDs retain exact override and deduplication identity", () => {
+  const prefix = "Collection ".repeat(60);
+  for (const withId of [false, true]) {
+    const rows = ["A", "B"].map(suffix => ({date: "2026-09-14", type: prefix + suffix,
+      ...(withId ? {type_id: prefix + suffix} : {})}));
+    const events = sensorEvents(entity({upcoming: rows})).events;
+    assert.equal(events[0].label, prefix + "A");
+    assert.equal(events[0].typeId, withId ? prefix + "A" : undefined);
+    const cfg = validateConfig({type: "x", entity: "sensor.waste",
+      overrides: [{type: prefix + "B", name: "Second collection"}]});
+    const projected = projectEvents(events, cfg, "2026-09-01", "2026-10-01");
+    assert.equal(projected.length, 2);
+    assert.ok(projected.some(e => e.label === "Second collection"));
+  }
+  assert.equal(calendarEvents([{summary: prefix + "A", start: {date: "2026-09-14"}}],
+    "calendar.waste", "UTC")[0].label, prefix + "A");
+});
+
+test("timezone changes discard projected stale dates and fence outstanding reads", async () => {
+  const date = addDays(homeDate(new Date(), "UTC"), 2);
+  let finish!: (value: unknown) => void;
+  const hass = {connection: {}, config: {time_zone: "UTC"}, states: {
+    "calendar.waste": {entity_id: "calendar.waste", state: "off", attributes: {}, last_updated: "first"}
+  }, callApi: async () => [{summary: "BIO", start: {dateTime: date + "T00:30:00Z"}}]} as unknown as HomeAssistant;
+  const controller = new ScheduleController(), cfg = validateConfig({type: "x", entity: "calendar.waste"});
+  let snapshot!: ScheduleSnapshot;
+  const publish = (v: ScheduleSnapshot) => {snapshot = v;};
+  await controller.update(hass, cfg, publish);
+  assert.equal(snapshot.events[0].date, date);
+  hass.states["calendar.waste"].last_updated = "pending";
+  hass.callApi = () => new Promise(resolve => {finish = resolve;});
+  const pending = controller.update(hass, cfg, publish);
+  hass.config = {time_zone: "America/Los_Angeles"};
+  hass.states["calendar.waste"].state = "unavailable";
+  await controller.update(hass, cfg, publish);
+  assert.equal(snapshot.status, "unavailable");
+  assert.deepEqual(snapshot.events, []);
+  finish([{summary: "BIO", start: {dateTime: date + "T00:30:00Z"}}]);
+  await pending;
+  assert.equal(snapshot.status, "unavailable");
+  hass.states["calendar.waste"].state = "off";
+  await controller.update(hass, cfg, publish);
+  assert.equal(snapshot.events[0].date, addDays(date, -1));
+});

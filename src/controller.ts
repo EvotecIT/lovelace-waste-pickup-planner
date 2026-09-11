@@ -13,10 +13,12 @@ export class ScheduleController {
   private generation = 0;
   private cache = new Map<string, CollectionEvent[]>();
   private connection?: object;
+  private timeZone?: string;
   reset(): void {
     this.generation++;
     this.cache.clear();
     this.connection = undefined;
+    this.timeZone = undefined;
   }
   cancel(): void {
     this.generation++;
@@ -26,9 +28,10 @@ export class ScheduleController {
     config: CardConfig,
     publish: (value: ScheduleSnapshot) => void,
   ): Promise<void> {
-    if (this.connection !== hass.connection) {
+    if (this.connection !== hass.connection || this.timeZone !== hass.config.time_zone) {
       this.cache.clear();
       this.connection = hass.connection;
+      this.timeZone = hass.config.time_zone;
     }
     const generation = ++this.generation;
     const timeZone = hass.config.time_zone,

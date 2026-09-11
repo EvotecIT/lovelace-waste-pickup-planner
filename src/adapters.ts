@@ -6,7 +6,7 @@ const record = (v: unknown): Record<string, unknown> | undefined =>
     ? (v as Record<string, unknown>)
     : undefined;
 const text = (v: unknown): string | undefined =>
-  typeof v === "string" && v.trim() ? v.slice(0, 500) : undefined;
+  typeof v === "string" && v.trim() ? v : undefined;
 function collection(
   row: Record<string, unknown>,
   entityId: string,
