@@ -16,7 +16,14 @@ export function readCalendar(
   const key = JSON.stringify([entityId, start, end]);
   const stamp = hass.states[entityId]?.last_updated;
   const current = cache.get(key);
-  if (current && (current.pending || (current.stamp === stamp && current.expires > Date.now())))
+  if (current?.pending) {
+    if (current.stamp === stamp) return current.promise;
+    // Serialize revalidation behind the existing transport rather than publishing
+    // its pre-change result or starting overlapping requests for this range.
+    const revalidate = () => readCalendar(hass, entityId, start, end);
+    return current.promise.then(revalidate, revalidate);
+  }
+  if (current && current.stamp === stamp && current.expires > Date.now())
     return current.promise;
   for (const [k, entry] of cache)
     if (!entry.pending && entry.expires <= Date.now()) cache.delete(k);

@@ -411,11 +411,13 @@ test("slow calendar reads remain shared and expire one minute after settlement",
   const second = readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01");
   assert.notEqual(second, first);
   hass.states["calendar.x"].last_updated = "changed";
-  assert.equal(readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01"), second);
+  const changed = readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01");
+  assert.notEqual(changed, second);
   finish([]);await second;
   const third = readCalendar(hass, "calendar.x", "2026-09-01", "2026-10-01");
   assert.notEqual(third, second);
-  finish([]);await third;
+  finish(["current"]);await third;
+  assert.deepEqual(await changed, ["current"]);
   assert.equal(calls, 3);
 });
 
@@ -434,4 +436,35 @@ test("calendar cache pressure cannot evict pending requests and multiply transpo
   assert.equal(calls, 101);
   finish.forEach(resolve => resolve([]));
   await Promise.all([...requests, next]);
+});
+
+test("calendar changes during pending reads publish only revalidated data", async () => {
+  const date = homeDate(new Date(), "UTC");
+  let calls = 0;
+  const pending: Array<{resolve: (value: unknown) => void; reject: (reason: Error) => void}> = [];
+  const hass = {connection: {}, config: {time_zone: "UTC"}, states: {
+    "calendar.x": {entity_id: "calendar.x", state: "off", attributes: {}, last_updated: "old"}
+  }, callApi: () => {calls++;return new Promise((resolve, reject) => pending.push({resolve,reject}));}} as unknown as HomeAssistant;
+  const controller = new ScheduleController(), config = validateConfig({type: "x", entity: "calendar.x"});
+  const labels: string[] = [];
+  const publish = (snapshot: ScheduleSnapshot) => labels.push(...snapshot.events.map(e => e.label));
+  const old = controller.update(hass, config, publish);
+  const currentHass = {...hass, states: {"calendar.x": {...hass.states["calendar.x"], last_updated: "new"}}};
+  const current = controller.update(currentHass, config, publish);
+  assert.equal(calls, 1);
+  pending[0].resolve([{summary: "Obsolete", start: {date}}]);
+  await old;
+  assert.equal(calls, 2);
+  assert.deepEqual(labels, []);
+  pending[1].resolve([{summary: "Current", start: {date}}]);
+  await current;
+  assert.deepEqual(labels, ["Current"]);
+  // A changed source also retries after an earlier transport failure.
+  const failed = readCalendar({...currentHass, states: {"calendar.x": {...currentHass.states["calendar.x"], last_updated: "third"}}}, "calendar.x", date, addDays(date, 30));
+  const failedResult = assert.rejects(failed, /offline/);
+  const retry = readCalendar({...currentHass, states: {"calendar.x": {...currentHass.states["calendar.x"], last_updated: "fourth"}}}, "calendar.x", date, addDays(date, 30));
+  pending[2].reject(Error("offline"));
+  await failedResult;
+  pending[3].resolve([]);
+  assert.deepEqual(await retry, []);
 });
