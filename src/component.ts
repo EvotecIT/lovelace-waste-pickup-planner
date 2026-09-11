@@ -1,7 +1,7 @@
 import { LitElement, html, nothing } from "lit";
 import { sourceIds, validateConfig } from "./config.ts";
 import { ScheduleController } from "./controller.ts";
-import { dateLabel, homeDate } from "./dates.ts";
+import { dateLabel, homeDate, updateLabel } from "./dates.ts";
 import { groupEvents } from "./schedule.ts";
 import { bins, chips, groupRows } from "./presentation.ts";
 import { strings } from "./strings.ts";
@@ -10,8 +10,9 @@ import { createEditor } from "./ha-editor.ts";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot } from "./types.ts";
 export class WastePickupPlannerCard extends LitElement {
   static styles = styles;
-  static properties = { snapshot: { state: true } };
+  static properties = { snapshot: { state: true }, detailsOpen: { state: true } };
   protected badge = false;
+  private detailsOpen = false;
   private config?: CardConfig;
   private ha?: HomeAssistant;
   private controller = new ScheduleController();
@@ -24,6 +25,8 @@ export class WastePickupPlannerCard extends LitElement {
   set hass(value: HomeAssistant) {
     const old = this.ha;
     this.ha = value;
+    if (!old || old.connection !== value.connection ||
+        old.config.time_zone !== value.config.time_zone) this.snapshot = undefined;
     if (
       !old ||
       old.connection !== value.connection ||
@@ -44,9 +47,16 @@ export class WastePickupPlannerCard extends LitElement {
     return this.ha;
   }
   setConfig(value: CardConfig): void {
-    this.config = validateConfig(value);
-    this.controller.reset();
-    this.snapshot = undefined;
+    const config = validateConfig(value);
+    const previous = this.config;
+    const sourcesChanged = !previous || JSON.stringify(sourceIds(previous).sort()) !==
+      JSON.stringify(sourceIds(config).sort());
+    if (sourcesChanged) this.controller.reset();
+    // Projection changes must not display the old selection while a read is pending.
+    if (sourcesChanged || previous?.days_to_show !== config.days_to_show ||
+        JSON.stringify(previous?.overrides) !== JSON.stringify(config.overrides))
+      this.snapshot = undefined;
+    this.config = config;
     this.refresh();
     this.requestUpdate();
   }
@@ -106,7 +116,7 @@ export class WastePickupPlannerCard extends LitElement {
       "en"
     );
   }
-  private activate(): void {
+  private async activate(): Promise<void> {
     const config = this.config;
     if (!config) return;
     const action = config.tap_action?.action ?? "details";
@@ -124,8 +134,12 @@ export class WastePickupPlannerCard extends LitElement {
       window.dispatchEvent(
         new CustomEvent("location-changed", { detail: { replace: false } }),
       );
-    } else
-      this.renderRoot.querySelector<HTMLDialogElement>("dialog")?.showModal();
+    } else {
+      this.detailsOpen = true;
+      await this.updateComplete;
+      if (this.isConnected && this.detailsOpen)
+        this.renderRoot.querySelector<HTMLDialogElement>("dialog")?.showModal();
+    }
   }
   protected render() {
     if (!this.config) return nothing;
@@ -151,7 +165,7 @@ export class WastePickupPlannerCard extends LitElement {
       state === "stale"
         ? html`<p class="notice" role="status">${t.stale}</p>`
         : nothing;
-    const details = html`<dialog aria-label=${t.schedule}>
+    const details = this.detailsOpen ? html`<dialog aria-label=${t.schedule} @close=${() => { this.detailsOpen = false; }}>
       <div class="heading">
         <h2>${title}</h2>
         <button
@@ -163,7 +177,7 @@ export class WastePickupPlannerCard extends LitElement {
         </button>
       </div>
       ${groups.length ? groupRows(groups, today, locale) : html`<p class="state">${message}</p>`}${notice}${snapshot?.messages.map((m) => html`<p class="state">${m}</p>`)}
-    </dialog>`;
+    </dialog>` : nothing;
     if (this.badge)
       return html`<button
           class="badge"
@@ -210,7 +224,7 @@ export class WastePickupPlannerCard extends LitElement {
               : html`<p class="state" role="status">${message}</p>`
           }
           ${notice}${state === "unavailable" ? snapshot?.messages.map((m) => html`<p class="state">${m}</p>`) : nothing}
-          ${this.config.show_updated && snapshot?.fetchedAt ? html`<p class="updated">${t.updated}: ${snapshot.fetchedAt}</p>` : nothing}
+          ${this.config.show_updated && snapshot?.fetchedAt ? html`<p class="updated">${t.updated}: ${updateLabel(snapshot.fetchedAt, locale, snapshot.timeZone)}</p>` : nothing}
         </section>
         ${this.config.tap_action?.action === "none" ? nothing : html`<button class="action" @click=${this.activate}>${this.config.tap_action?.action === "more-info" ? title : t.details} <span aria-hidden="true">↗</span></button>`}</ha-card
       >${details}`;

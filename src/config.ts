@@ -57,7 +57,7 @@ export function validateConfig(value: CardConfig): CardConfig {
         !item ||
         typeof item.type !== "string" ||
         !item.type.trim() ||
-        (item.name !== undefined && typeof item.name !== "string") ||
+        (item.name !== undefined && (typeof item.name !== "string" || !item.name.trim())) ||
         (item.hidden !== undefined && typeof item.hidden !== "boolean") ||
         (item.color !== undefined && !validColor(item.color)) ||
         (item.icon !== undefined && !validIcon(item.icon))

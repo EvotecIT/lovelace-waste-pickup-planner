@@ -95,6 +95,7 @@ export function sensorEvents(entity: HassEntity): {
   const update =
     typeof a.last_update === "string" &&
     /^\d{4}-\d{2}-\d{2}T/.test(a.last_update) &&
+    /(?:Z|[+-]\d{2}:\d{2})$/.test(a.last_update) &&
     Number.isFinite(Date.parse(a.last_update))
       ? a.last_update
       : undefined;

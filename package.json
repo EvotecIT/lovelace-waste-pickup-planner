@@ -1,6 +1,6 @@
 {
   "name": "lovelace-waste-pickup-planner",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Date-grouped waste collection cards and badges for Home Assistant.",
   "type": "module",

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { sensorEvents, calendarEvents } from "../src/adapters.ts";
-import { validDate, homeDate, addDays, daysBetween } from "../src/dates.ts";
+import { validDate, homeDate, addDays, daysBetween, updateLabel } from "../src/dates.ts";
 import { validateConfig } from "../src/config.ts";
 import { artworkColor, projectEvents, groupEvents } from "../src/schedule.ts";
 import { readCalendar } from "../src/calendar-cache.ts";
@@ -330,4 +330,44 @@ test("timezone changes discard projected stale dates and fence outstanding reads
   hass.states["calendar.waste"].state = "off";
   await controller.update(hass, cfg, publish);
   assert.equal(snapshot.events[0].date, addDays(date, -1));
+});
+
+test("last-known empty schedules stay stale through outages and display edits", async () => {
+  const controller = new ScheduleController();
+  const hass = {connection: {}, config: {time_zone: "UTC"},
+    states: {"sensor.waste": entity({upcoming: []})}} as HomeAssistant;
+  let snapshot!: ScheduleSnapshot;
+  const publish = (value: ScheduleSnapshot) => {snapshot = value;};
+  await controller.update(hass, validateConfig({type: "x", entity: "sensor.waste"}), publish);
+  assert.equal(snapshot.status, "empty");
+  hass.states["sensor.waste"] = entity({}, "unavailable");
+  await controller.update(hass, validateConfig({type: "x", entity: "sensor.waste", title: "New title", layout: "hero"}), publish);
+  assert.equal(snapshot.status, "stale");
+  assert.deepEqual(snapshot.events, []);
+});
+
+test("blank overrides are rejected without changing valid complete labels", () => {
+  for (const name of ["", "  ", "\t\n"])
+    assert.throws(() => validateConfig({type: "x", entity: "sensor.waste", overrides: [{type: "BIO", name}]}));
+  const name = " Food scraps ";
+  assert.equal(validateConfig({type: "x", entity: "sensor.waste", overrides: [{type: "BIO", name}]}).overrides![0].name, name);
+});
+
+ test("provider update times use the selected locale and home timezone", () => {
+  const value = "2026-09-11T23:30:00-07:00";
+  assert.equal(updateLabel(value, "en-GB", "Europe/Warsaw"), "12 Sept 2026, 08:30");
+  assert.equal(updateLabel(value, "pl", "Europe/Warsaw"), "12 wrz 2026, 08:30");
+  assert.equal(sensorEvents(entity({upcoming: [], last_update: "2026-09-11T23:30:00"})).fetchedAt, undefined);
+});
+
+test("multiple provider timestamps select the chronologically oldest offset value", async () => {
+  const controller = new ScheduleController();
+  const older = "2026-09-12T01:00:00+02:00";
+  const hass = {connection: {}, config: {time_zone: "UTC"}, states: {
+    "sensor.waste": entity({upcoming: [], last_update: "2026-09-11T23:30:00-07:00"}),
+    "sensor.second": {...entity({upcoming: [], last_update: older}), entity_id: "sensor.second"}
+  }} as HomeAssistant;
+  let snapshot!: ScheduleSnapshot;
+  await controller.update(hass, validateConfig({type: "x", entities: Object.keys(hass.states)}), value => {snapshot = value;});
+  assert.equal(snapshot.fetchedAt, older);
 });

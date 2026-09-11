@@ -41,3 +41,10 @@ export function dateLabel(date: string, today: string, locale: string): string {
         timeZone: "UTC",
       }).format(new Date(`${date}T12:00:00Z`));
 }
+
+/** Format an absolute provider timestamp independently of the viewer timezone. */
+export function updateLabel(value: string, locale: string, timeZone: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium", timeStyle: "short", timeZone,
+  }).format(new Date(value));
+}

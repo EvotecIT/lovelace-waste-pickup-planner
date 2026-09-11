@@ -40,7 +40,8 @@ export class ScheduleController {
     const base = { rangeStart, rangeEnd, timeZone, messages: [] as string[] };
     publish({ ...base, status: "loading", events: [] });
     let failures = 0,
-      successes = 0;
+      successes = 0,
+      cachedSources = 0;
     const events: CollectionEvent[] = [],
       updates: string[] = [];
     await Promise.all(
@@ -83,6 +84,7 @@ export class ScheduleController {
               ? error.message
               : `${id} could not be loaded.`,
           );
+          if (this.cache.has(id)) cachedSources++;
           events.push(...(this.cache.get(id) ?? []));
         }
       }),
@@ -93,13 +95,13 @@ export class ScheduleController {
       ...base,
       events: projected,
       status: failures
-        ? projected.length || successes
+        ? cachedSources || successes
           ? "stale"
           : "unavailable"
         : projected.length
           ? "ready"
           : "empty",
-      fetchedAt: updates.sort()[0],
+      fetchedAt: updates.sort((a, b) => Date.parse(a) - Date.parse(b))[0],
     });
   }
 }
