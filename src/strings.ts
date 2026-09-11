@@ -13,6 +13,9 @@ const en = {
   updated: "Provider updated",
   details: "View schedule",
   today: "Today",
+  more: "more",
+  previousPage: "Previous page",
+  nextPage: "Next page",
 };
 const pl: typeof en = {
   title: "Odbiór odpadów",
@@ -29,6 +32,9 @@ const pl: typeof en = {
   updated: "Aktualizacja źródła",
   details: "Zobacz harmonogram",
   today: "Dzisiaj",
+  more: "więcej",
+  previousPage: "Poprzednia strona",
+  nextPage: "Następna strona",
 };
 export const strings = (locale: string): typeof en =>
   locale.toLowerCase().startsWith("pl") ? pl : en;

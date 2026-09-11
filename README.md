@@ -50,7 +50,7 @@ days_to_show: 30
 max_groups: 4
 ```
 
-- **Compact** shows the next date and every collection on that date.
+- **Compact** shows the next date, up to six collection names, and a count of any additional collections.
 - **Hero** adds optional bin artwork and upcoming date groups.
 - **Schedule** shows date-grouped rows.
 - **Badge** shows the next date and collection names. Add it to a view's badges:
@@ -60,7 +60,7 @@ type: custom:waste-pickup-planner-badge
 entity: sensor.waste_schedule
 ```
 
-The default action opens the full schedule for the configured date range. The dialog supports keyboard navigation and Escape to close. English and Polish interface labels are included; dates follow Home Assistant's language and home timezone.
+Visible date groups show up to six complete collection names and an overflow count. The default action opens the full schedule for the configured date range, in pages of 100 collections. The dialog supports keyboard navigation and Escape to close. English and Polish interface labels are included; dates follow Home Assistant's language and home timezone.
 
 ## Configuration
 

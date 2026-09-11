@@ -13,8 +13,8 @@ customElements.define(
     }
   },
 );
-const connection = {},
-  cards = [];
+let connection = {};
+const cards = [];
 const day = (offset) => {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() + offset);
@@ -105,7 +105,10 @@ for (const layout of ["hero", "compact", "schedule", "badge"]) {
   cards.push(card);
 }
 document.querySelector("#state").addEventListener("change", (e) => {
+  connection = {};
   for (const card of cards) {
+    // Each choice is a reproducible fixture, independent of the prior choice.
+    if (e.target.value === "stale") card.hass = hass("ready");
     if (e.target.value !== "stale")
       card.setConfig({
         type: card.localName,

@@ -20,7 +20,7 @@ Municipality parsing, aliases, canonical type identity and fetch lifecycle remai
 
 A present `upcoming` list is authoritative, including an empty list. Unsupported sensor detail formats produce an actionable message. Unknown-state sensors with a valid empty structured list are empty, not unavailable. An explicitly unavailable entity is not treated as a successful empty response.
 
-Malformed sensor records make that source unavailable rather than showing a falsely complete schedule. Record counts, label length, dates, colors and icons are bounded or validated. The adapter accepts only `#RRGGBB` colors and `mdi:…` icons. It ignores provider image URLs; optional bin illustrations are bundled inline SVG.
+Malformed sensor records make that source unavailable rather than showing a falsely complete schedule. Record counts are bounded; complete labels are preserved and dates, colors and icons are validated. The adapter accepts only `#RRGGBB` colors and `mdi:…` icons. It ignores provider image URLs; optional bin illustrations are bundled inline SVG.
 
 Each explicitly selected entity is a separate source. Deduplication uses source + date + stable type ID, falling back to the complete label. No registry discovery is performed in this release. Users select one authoritative sensor/calendar per address; the editor explains this requirement. This preserves separate households with identical dates and labels.
 
@@ -38,7 +38,7 @@ States are loading, ready, empty, unavailable and stale. A failed source can ret
 
 ## Presentation and host integration
 
-The compact, hero and schedule layouts share the same group/chip renderers. The custom badge shares their controller, projection and details dialog. Mixed pickups never inherit one collection's identity as the whole group's identity.
+The compact, hero and schedule layouts share the same group/chip renderers. The custom badge shares their controller, projection and details dialog. Mixed pickups never inherit one collection's identity as the whole group's identity. Visible groups show at most six collection chips and an overflow count. The details dialog retains the full schedule in 100-collection pages; closed dialogs do not mount collection rows.
 
 Artwork is optional and decorative. Source/customized colors and explicit card overrides can color a bin. A `default` color may style the corresponding collection icon, but its bin remains neutral. Missing colors also remain neutral.
 

@@ -1,11 +1,13 @@
-import { html } from "lit";
+import { html, nothing } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
 import { dateLabel } from "./dates.ts";
+import { strings } from "./strings.ts";
 import { artworkColor } from "./schedule.ts";
 import type { CollectionEvent, DateGroup } from "./types.ts";
-export const chips = (events: CollectionEvent[]) =>
+export const chips = (events: CollectionEvent[], locale: string, limit = 6) =>
   html`<div class="chips">
-    ${events.map((e) => html`<span class="chip" style=${styleMap({ "--waste-type-color": e.color })}><ha-icon aria-hidden="true" .icon=${e.icon ?? "mdi:trash-can-outline"}></ha-icon><span>${e.label}</span></span>`)}
+    ${events.slice(0, limit).map((e) => html`<span class="chip" style=${styleMap({ "--waste-type-color": e.color })}><ha-icon aria-hidden="true" .icon=${e.icon ?? "mdi:trash-can-outline"}></ha-icon><span>${e.label}</span></span>`)}
+    ${events.length > limit ? html`<span class="chip overflow">+${new Intl.NumberFormat(locale).format(events.length - limit)} ${strings(locale).more}</span>` : nothing}
   </div>`;
 export const bins = (events: CollectionEvent[]) =>
   html`<div class="bins" aria-hidden="true">
@@ -33,7 +35,7 @@ export const bins = (events: CollectionEvent[]) =>
         </div>`,
     )}
   </div>`;
-export const groupRows = (groups: DateGroup[], today: string, locale: string) =>
+export const groupRows = (groups: DateGroup[], today: string, locale: string, chipLimit = 6) =>
   html`${groups.map((group) => {
     const d = new Date(`${group.date}T12:00:00Z`);
     return html`<div class="group">
@@ -44,7 +46,7 @@ export const groupRows = (groups: DateGroup[], today: string, locale: string) =>
       </div>
       <div class="group-body">
         <div class="group-date">${dateLabel(group.date, today, locale)}</div>
-        ${chips(group.events)}
+        ${chips(group.events, locale, chipLimit)}
       </div>
     </div>`;
   })}`;

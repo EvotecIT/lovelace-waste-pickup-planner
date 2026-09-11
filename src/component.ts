@@ -10,9 +10,10 @@ import { createEditor } from "./ha-editor.ts";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot } from "./types.ts";
 export class WastePickupPlannerCard extends LitElement {
   static styles = styles;
-  static properties = { snapshot: { state: true }, detailsOpen: { state: true } };
+  static properties = { snapshot: { state: true }, detailsOpen: { state: true }, detailsPage: { state: true } };
   protected badge = false;
   private detailsOpen = false;
+  private detailsPage = 0;
   private config?: CardConfig;
   private ha?: HomeAssistant;
   private controller = new ScheduleController();
@@ -99,10 +100,12 @@ export class WastePickupPlannerCard extends LitElement {
     clearInterval(this.timer);
     document.removeEventListener("visibilitychange", this.visible);
     this.controller.cancel();
+    this.detailsOpen = false;
   }
   private refresh(): void {
     if (!this.isConnected || !this.ha || !this.config) return;
     this.day = homeDate(new Date(), this.ha.config.time_zone);
+    if (this.snapshot?.rangeStart !== this.day) this.snapshot = undefined;
     void this.controller.update(this.ha, this.config, (value) => {
       // Keep the last visible schedule during a background calendar refresh.
       if (value.status !== "loading" || !this.snapshot) this.snapshot = value;
@@ -135,11 +138,17 @@ export class WastePickupPlannerCard extends LitElement {
         new CustomEvent("location-changed", { detail: { replace: false } }),
       );
     } else {
+      this.detailsPage = 0;
       this.detailsOpen = true;
       await this.updateComplete;
       if (this.isConnected && this.detailsOpen)
         this.renderRoot.querySelector<HTMLDialogElement>("dialog")?.showModal();
     }
+  }
+  private async changeDetailsPage(page: number): Promise<void> {
+    this.detailsPage = page;
+    await this.updateComplete;
+    this.renderRoot.querySelector("dialog")?.scrollTo(0, 0);
   }
   protected render() {
     if (!this.config) return nothing;
@@ -159,12 +168,19 @@ export class WastePickupPlannerCard extends LitElement {
           : state === "unavailable"
             ? t.unavailable
             : t.loading;
-    const names = next?.events.map((e) => e.label).join(" · ") ?? message;
+    const names = next
+      ? next.events.length > 2
+        ? `${new Intl.NumberFormat(locale).format(next.events.length)} ${t.collections}`
+        : next.events.map((e) => e.label).join(" · ")
+      : message;
     const date = next ? dateLabel(next.date, today, locale) : message;
     const notice =
       state === "stale"
         ? html`<p class="notice" role="status">${t.stale}</p>`
         : nothing;
+    const pageSize = 100;
+    const pageCount = Math.max(1, Math.ceil((snapshot?.events.length ?? 0) / pageSize));
+    const page = Math.min(this.detailsPage, pageCount - 1);
     const details = this.detailsOpen ? html`<dialog aria-label=${t.schedule} @close=${() => { this.detailsOpen = false; }}>
       <div class="heading">
         <h2>${title}</h2>
@@ -176,7 +192,12 @@ export class WastePickupPlannerCard extends LitElement {
           ✕
         </button>
       </div>
-      ${groups.length ? groupRows(groups, today, locale) : html`<p class="state">${message}</p>`}${notice}${snapshot?.messages.map((m) => html`<p class="state">${m}</p>`)}
+      ${groups.length ? groupRows(groupEvents(snapshot!.events.slice(page * pageSize, (page + 1) * pageSize)), today, locale, pageSize) : html`<p class="state">${message}</p>`}${notice}${snapshot?.messages.map((m) => html`<p class="state">${m}</p>`)}
+      ${pageCount > 1 ? html`<nav class="pages" aria-label=${t.schedule}>
+        <button ?disabled=${page === 0} @click=${() => this.changeDetailsPage(page - 1)}>${t.previousPage}</button>
+        <span aria-live="polite">${new Intl.NumberFormat(locale).format(page + 1)} / ${new Intl.NumberFormat(locale).format(pageCount)}</span>
+        <button ?disabled=${page + 1 === pageCount} @click=${() => this.changeDetailsPage(page + 1)}>${t.nextPage}</button>
+      </nav>` : nothing}
     </dialog>` : nothing;
     if (this.badge)
       return html`<button
@@ -192,7 +213,7 @@ export class WastePickupPlannerCard extends LitElement {
           ><span class="badge-copy"
             ><strong>${next ? date : title}</strong
             ><small
-              >${state === "stale" ? `${t.staleBadge} · ` : ""}${next && next.events.length > 2 ? `${next.events.length} ${t.collections}` : names}</small
+              >${state === "stale" ? `${t.staleBadge} · ` : ""}${names}</small
             ></span
           ></button
         >${details}`;
@@ -213,7 +234,7 @@ export class WastePickupPlannerCard extends LitElement {
                 : html`<div class="primary">
                       <div class="copy">
                         <div class="eyebrow">${t.next}</div>
-                        <span class="date">${date}</span>${chips(next.events)}
+                        <span class="date">${date}</span>${chips(next.events, locale)}
                         <p class="full-date">
                           ${new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${next.date}T12:00:00Z`))}
                         </p>

@@ -103,6 +103,11 @@ export const styles = css`
     --mdc-icon-size: 18px;
     color: var(--waste-type-color, var(--secondary-text-color, #727272));
   }
+  .overflow { color: var(--secondary-text-color, #727272); }
+  .pages { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .pages button { min-height: 44px; border: 0; border-radius: 8px; background: transparent; }
+  .pages span { font-size: 12px; text-align: center; }
+  .pages button:disabled { opacity: .45; cursor: default; }
   .bins {
     display: flex;
     align-items: flex-end;
