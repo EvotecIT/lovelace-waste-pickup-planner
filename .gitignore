@@ -1,0 +1,4 @@
+node_modules/
+release/
+.validation/
+.DS_Store
