@@ -1,133 +1,57 @@
-# Waste Schedule Card: design and API plan
+# Architecture and compatibility
 
-## Presentation choices
+Waste Pickup Planner uses one frontend schedule projection for the card and badge:
 
-Use one schedule model across every presentation. The compact layout is the default; the illustrated hero is an explicit choice.
+```text
+HA sensor or calendar → input adapter → source-aware events → home-local date groups → presentation
+```
 
-| Presentation | Use | Content |
+Municipality parsing, aliases, canonical type identity and fetch lifecycle remain in the integration. This frontend neither classifies waste names nor talks directly to providers. Lit handles escaped rendering; configuration cannot contain executable templates.
+
+## Input contracts
+
+| Input | Expected records | Metadata |
 | --- | --- | --- |
-| Hero | Dedicated household or collection view | Next date, all collections on that date, optional small bin artwork, upcoming groups |
-| Compact | Everyday overview or narrow column | Next date, collection names, count, details action |
-| Schedule | Planning ahead | Date-grouped rows, bounded date range, optional per-type filter |
-| Custom badge | Top of a dashboard | Next date and short names; full names accessible on focus/tap |
-| Built-in HA entity badge | Dashboard with no extra frontend dependency | Existing sensor state; standard more-info or navigation action |
-| Built-in Tile / Entities | Native HA dashboard | Existing sensor states and supported attributes |
+| Waste Collection Schedule v2 Generic sensor | `upcoming: [{date, type, icon?, picture?}]` | Whole collection labels |
+| v3 Generic sensor | Same fields, optionally `type_id`, `color`, `color_source` | Stable type IDs and explicit color provenance |
+| Grouped structured records | `upcoming: [{date, collections: [...]}]` | Each collection retains its own metadata |
+| Historical fork sensor | `upcoming_pickups: [{date, types: [...]}]` or `next_pickup` | Explicit labels; combined `type` text is never split |
+| Home Assistant calendar | Standard calendar event `summary` and `start.date` or `start.dateTime` | Title and date; no inferred type/color |
 
-The package includes a custom badge for richer grouping, but the integration's entities remain useful without it. Publish examples for built-in badges, Tile, Entities, and optional third-party template cards. Third-party cards are recipes, not dependencies or a claim of automatic support.
+A present `upcoming` list is authoritative, including an empty list. Unsupported sensor detail formats produce an actionable message. Unknown-state sensors with a valid empty structured list are empty, not unavailable. An explicitly unavailable entity is not treated as a successful empty response.
 
-The built-in badge supports entity state/attribute display and normal dashboard actions. A custom badge has its own registration and visual editor. Keep these two paths explicit in installation instructions. See the [HA badge documentation](https://www.home-assistant.io/dashboards/badges/) and [custom badge API](https://developers.home-assistant.io/docs/frontend/custom-ui/custom-badge/).
+Malformed sensor records make that source unavailable rather than showing a falsely complete schedule. Record counts are bounded; complete labels are preserved and dates, colors and icons are validated. The adapter accepts only `#RRGGBB` colors and `mdi:…` icons. It ignores provider image URLs; optional bin illustrations are bundled inline SVG.
 
-## Theme and interaction
+Each explicitly selected entity is a separate source. Deduplication uses source + date + stable type ID, falling back to the complete label. No registry discovery is performed in this release. Users select one authoritative sensor/calendar per address; the editor explains this requirement. This preserves separate households with identical dates and labels.
 
-Inherit Home Assistant typography, primary/secondary text, card background, divider, shadow, and radius variables. Use a small documented set of card-specific CSS variables only for features HA does not define. No hard-coded dark page background inside the component. Honor dashboard card themes and react to theme changes.
+## Dates and lifecycle
 
-Artwork is optional, has no information unavailable in text, and loads only for the hero. Use a neutral illustration when the provider gives no explicit color. Canonical category palette colors are presentation defaults, not evidence of a physical bin's color. Only `color_source: source` or `customize`, or an explicit card override, may color bin artwork. Conflicting colors on the same day remain separate per collection. Never infer color from language, country, waste name, or an image model.
+`YYYY-MM-DD` values are validated by calendar round-trip. All-day events keep their literal date. Timed calendar events require an offset and are projected into Home Assistant's home timezone. Relative day distances use calendar dates, so DST does not shorten or lengthen a collection day.
 
-Rows show date first, then collection names. Group multiple pickups on the same local date. Compact content wraps before shrinking; a badge may abbreviate to “Tomorrow · 3 collections” with all names in its accessible label and details. Do not color a mixed group with one category's icon/color as if it represents all pickups; the concept board's single leaf beside a mixed summary should become a neutral collection icon or multiple small indicators in implementation.
+The visible range starts today and ends before today + `days_to_show`. Integration-supplied today/cutoff behavior is preserved by using only the records the sensor publishes. The controller checks the home date every minute and refreshes after the tab becomes visible again.
 
-Tap opens a schedule details dialog by default for the custom components. Offer standard more-info, navigation, and none. Keep configuration changes, sensor deletion, and refresh service calls out of the first release. Keyboard activation, visible focus, screen-reader names, reduced motion, and at least 44px touch targets are required. Urgency is text (“Today”, “Tomorrow”), not color alone.
+A weak map keyed by the authenticated HA connection shares calendar reads between components. Entries include the entity, query range and entity update stamp. Pending requests remain shared; completed results have a one-minute cache. Pending entries are not evicted to make room for new requests, and the cache admits at most 100 entries per connection. The request range is widened to cover all local-day offsets; the projection applies the exact home-date range.
 
-Distinct states: loading; available; available with stale cached data; empty within the selected range; unavailable; invalid configuration. Do not report an empty range as “all collected” or interpret an HA state timestamp as a successful provider fetch.
+Removal invalidates pending publications and removes the component timer/listener. HA's supplied `callApi` owns the actual transport, so an already-issued request may finish after removal. A new connection or source configuration clears the local stale-data cache.
 
-## Data ownership
+States are loading, ready, empty, unavailable and stale. A failed source retains its last successful events and provider timestamp in memory, accompanied by an explicit stale notice. `last_update` is shown only when supplied by a structured sensor; entity `last_updated` is used for request invalidation, never presented as provider freshness.
 
-Municipality API → waste integration provider → canonical collections → HA entities/calendar → frontend adapter → shared schedule model → cards/badge.
+## Presentation and host integration
 
-Provider parsing, collection identity, source metadata, aliases, and fetch lifecycle belong in the waste integration. The frontend must not contact municipality APIs, store HA tokens, introduce a cloud account, or implement a second waste-type classification engine.
+The compact, hero and schedule layouts share the same group/chip renderers. The custom badge shares their controller, projection and details dialog. Mixed pickups never inherit one collection's identity as the whole group's identity. Visible groups show at most six collection chips and an overflow count. The details dialog retains the full schedule in 100-collection pages; closed dialogs do not mount collection rows.
 
-Use the authenticated connection supplied by HA. No dedicated backend endpoint is needed for the initial release. The [HA REST calendar API](https://developers.home-assistant.io/docs/api/rest/) supplies a date range when a calendar is selected; state updates use the existing HA frontend connection. Group related entities using registry/config-entry identity where available, with an explicit entity selector as the reliable fallback. Never discover sources by Polish/English names or combine distinct addresses just because dates and labels match.
+Artwork is optional and decorative. Source/customized colors and explicit card overrides can color a bin. A `default` color may style the corresponding collection icon, but its bin remains neutral. Missing colors also remain neutral.
 
-### Supported input contracts
+HA theme variables control card surface, text, border, radius, shadow and primary action color. Layouts wrap long names; interactive controls have a minimum 44px target. The native HTML dialog supplies modal focus handling and Escape dismissal. Urgency appears in localized text.
 
-1. **Upstream generic sensor details:** structured `upcoming` collection records. v3 adds optional stable `type_id`, `color`, `color_source`, and grouped `collections` through the provider-color PR. Preserve whole labels in v2; do not split on commas because a label may itself contain commas.
-2. **HA calendar:** explicitly selected calendar entities and bounded event queries. Preserve each event title when canonical type identity is absent. Calendar-only mode works without provider-color metadata.
-3. **Existing fork attributes:** a separately tested temporary adapter for `next_pickup` / `upcoming_pickups` only where the exact observed schema is supported. It is not the preferred contract and is removable after supported installations migrate.
+Both components register picker entries and visual editors. The card implements sizing for Masonry and Sections. Configuration changes use HA's `config-changed` event. The supported host contracts are documented in [custom cards](https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/) and [custom badges](https://developers.home-assistant.io/docs/frontend/custom-ui/custom-badge/).
 
-Prefer one authoritative structured source per integration entry. Generic records plus calendar events must not produce duplicate pickups. Only deduplicate across representations when registry identity and collection identity establish equivalence; never deduplicate different selected sources globally by title/date. Distinguish missing data from an explicitly empty authoritative list.
+## Build and release ownership
 
-### Frontend model
+Lit owns rendering, esbuild creates the single JavaScript resource, and the small pack script copies the release payload. Shared PowerForge owns release versioning, merged-PR validation, artifact publication and read-back. This follows the Lawn Mower Card repository's workflow; no mower-specific controls or 3D dependencies are included.
 
-```ts
-interface CollectionEvent {
-  sourceId: string;
-  entityId: string;
-  date: string; // validated YYYY-MM-DD in the HA home timezone
-  typeId?: string; // stable v3 ID; absent when the source cannot provide one
-  label: string;
-  icon?: string;
-  color?: string; // validated #RRGGBB
-  colorSource?: "source" | "customize" | "default";
-}
+The current supported runtime baseline is Home Assistant 2026.9.1. Sensor v2/v3 and historical-fork schemas have fixture-backed adapter coverage; that is not a claim that every historical HA frontend version was exercised.
 
-interface ScheduleSnapshot {
-  events: readonly CollectionEvent[];
-  status: "loading" | "ready" | "stale" | "empty" | "unavailable";
-  fetchedAt?: string; // only when backed by provider fetch evidence
-  rangeStart: string;
-  rangeEnd: string;
-  timeZone: string;
-}
-```
+## Design references
 
-This is a frontend projection, not a proposed replacement wire protocol. Do not require every existing provider to add these fields. Missing identity or freshness reduces available features instead of manufacturing evidence.
-
-Compute local date differences as calendar dates, not milliseconds divided by 24 hours. Respect all-day calendar boundaries, HA timezone, the integration's today/cutoff behavior, DST, and locale. Refresh relative labels at the next home-local date boundary and on tab visibility return. A client in another timezone must still show the home's collection day.
-
-Parse attributes as untrusted data; escape labels, reject invalid dates/colors, bound record counts, and avoid evaluating JavaScript or templates from configuration. Cache calendar requests by HA connection, selected entities, and range; share in-flight reads between card/badge instances, cancel obsolete requests, and dispose subscriptions on removal. Re-render only when relevant entities, config, theme, locale, or date boundary change.
-
-## Configuration and editor
-
-Proposed configuration, not installable syntax yet:
-
-```yaml
-type: custom:waste-schedule-card
-entity: sensor.waste_schedule
-layout: compact # compact | hero | schedule
-days_to_show: 30
-max_groups: 5
-show_artwork: false
-show_updated: true
-tap_action:
-  action: more-info
-```
-
-Keep entity-first setup simple. Advanced setup can select several explicitly named sensor/calendar sources, per-type visibility and display overrides, date range, density, artwork, and action. Default to HA locale; an explicit locale override is optional. Validate config in `setConfig`; visual editor changes use `config-changed`. Supply picker registration, useful preview data, stub config, card size, and Sections grid sizing. Follow the [custom card contract](https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/), with any minimum-version compatibility isolated in the HA host adapter rather than the domain model.
-
-Native HA badge example usable with an existing waste sensor today:
-
-```yaml
-type: entity
-entity: sensor.next_waste_pickup
-name: Waste
-show_name: true
-show_state: true
-tap_action:
-  action: more-info
-```
-
-The displayed state is whatever that sensor publishes; the example does not manufacture a “Tomorrow” calculation. A Tile recipe can use the same entity. Automatic color binding and date grouping are features of the custom components, not promises about built-in cards.
-
-## Repository and delivery
-
-Separate repository `lovelace-waste-schedule-card`; do not add this frontend to CasaRay. Use TypeScript and Lit, with small modules for configuration, HA host access, input adapters, date grouping, shared view model, card, badge, editor, and styles. Reuse the lawn-mower-card repository's established development/release conventions where applicable; do not copy its mower controls, cloud API, or 3D worker.
-
-Build/package behavior should use the existing PowerForge frontend packaging owner. Confirm the current reusable preset before adding a release wrapper. Ship one versioned JavaScript resource that registers the card and badge; artwork/editor may be lazy chunks only if the shared packaging and HACS delivery path preserve them. No new runtime dependency merely to render bins.
-
-### Implementation sequence
-
-- [x] Select descriptive package/element names and presentation family.
-- [x] Generate hero and layout/theme concept boards with the built-in image model.
-- [x] Define input contracts, ownership, theme behavior, and native HA alternatives.
-- [ ] Scaffold the independent frontend repository and shared build configuration.
-- [ ] Implement adapters, date grouping, identity rules, and fixture-backed contract tests.
-- [ ] Implement compact and schedule layouts, native HA example recipes, and custom badge.
-- [ ] Implement opt-in hero artwork and visual editor.
-- [ ] Validate in real HA: current/minimum supported versions, Sections/Masonry, 320px/400px/wide/short landscape, dark/light/custom themes, keyboard, long labels, mixed pickups, empty/stale/unavailable, DST, and removal/reconnection.
-- [ ] Inspect rendered screenshots and console output after the final changes; verify multiple instances share reads and unload cleanly.
-- [ ] Review, package, and publish an installable prerelease; document supported integration versions from tested evidence.
-
-Native badge/Tile usage does not need the two pending integration PRs. Provider-specific colors need the color metadata contract. Device-backed sensor controls are an optional integration feature, not a card prerequisite.
-
-## Image provenance
-
-`design/hero-concept.png` and `design/layouts-concept.png` were generated with the built-in image model on 2026-09-11. The prompts requested readable high-fidelity Home Assistant UI concepts, grouped next-day collections, optional small brown/blue bin artwork for explicit example colors, neutral unknown colors, dark/light/theme variants, and no invented statistics or control actions. These are design references, not runtime screenshots or final icon assets.
+The images in `design/` were generated before the final name was selected. They retain the earlier working title “Waste Schedule Card”; the original prompts are preserved in `design/prompts.md`. They are concepts, not runtime evidence. Public screenshots under `assets/` show the implemented components with synthetic collection data.
