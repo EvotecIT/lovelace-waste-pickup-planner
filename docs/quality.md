@@ -1,0 +1,78 @@
+# Card quality qualification
+
+Waste Pickup Planner targets the Evotec Platinum card standard below.
+Qualification is incomplete. This is a self-assessed card standard, separate
+from Home Assistant's Integration Quality Scale and official integration ratings.
+
+A release qualifies only when every applicable row has reproducible evidence for
+that release's source and shipped JavaScript. A passing unit suite or attractive
+preview alone does not qualify it. Record the commit, artifact SHA-256, HA version,
+browser version, viewport, scenario, result, and any remaining limitation with
+each qualification run. Revalidate affected evidence after source, dependency,
+build, or supported HA changes.
+
+## Acceptance ledger
+
+| Area | Required evidence | Current evidence and remaining work |
+| --- | --- | --- |
+| Data contracts | Preserve complete labels, source identity, all-day dates, home timezone, overrides, and provider timestamps. Exercise malformed and bounded inputs. | `tests/schedule.test.ts` covers the core contracts. Expand malformed calendar and sensor boundary cases where they affect displayed status. |
+| Availability | Distinguish loading, empty, unavailable, and stale results. Retain last-known data only for the same connection and source configuration. | Controller tests cover outages, recovery, connection/timezone changes, and pending-response fencing. Browser state transitions remain to be automated. |
+| Resource lifetime | Repeated attachment/removal and editor changes release timers/listeners, suppress obsolete results, and keep request volume bounded. | Calendar-cache tests cover shared requests, expiry, revalidation, and pressure. Repeated component lifecycle and retained-resource measurements remain open. |
+| Types | Strict checking of every production TypeScript module. | `npm run check` uses `strict: true` and includes all `src/**/*.ts`. Dependency declaration checking is skipped; this is not a claim about third-party type quality. |
+| Tests | Meaningful unit coverage of data contracts plus browser coverage of components and editors. Report the measured denominator. | The Node suite exercises six data modules. It does not import components, editors, presentation, or styles, so its coverage percentage is not whole-product coverage. |
+| Accessibility | Keyboard-only activation, dialog focus containment and restoration, Escape dismissal, accessible names, readable contrast, zoom/reflow, and non-color status cues. | Native buttons/dialog and badge descriptions exist. Complete browser assertions, contrast checks, and assistive-technology checks remain open. |
+| Responsive layout | Compact, hero, schedule, badge, and dialog at narrow/wide widths and short landscape height; complete long labels and overflow navigation. | The standalone preview supplies representative layouts and long labels. Automate the viewport matrix and verify it in HA. |
+| Themes and localization | Light, dark, and custom themes; English/Polish labels; dates independent of viewer timezone; no untranslated user-facing errors in supported languages. | Date tests cover home timezone, DST, and localized provider timestamps. Source-error text is still English; rendered localization and theme checks remain open. |
+| Configuration | YAML and visual editors round-trip supported options, preserve unknown supported values, reject unsafe input, and report actionable errors. | Config validation has focused tests. HA editor round-trip and invalid-input interaction proof remain open. |
+| Privacy and security | No provider credentials, external artwork requests, template execution, or unsafe navigation; bounded source inputs and no sensitive diagnostic leakage. | Adapters and config validation constrain inputs; the bundle includes artwork. Browser network inspection and dependency/artifact audit remain open. |
+| Compatibility | Verify the declared minimum HA version, current stable HA, and supported desktop/mobile browser engines. Record beta results separately. | `hacs.json` declares HA 2026.9.1. Installed-host and cross-browser qualification remain open. |
+| Delivery | Build from the lockfile, keep the committed HACS resource identical to source output, verify the packed payload, and install the actual release artifact. | CI runs tests, type checking, packing, and a generated-resource diff check. Published-artifact installation and upgrade proof remain open. |
+| Upgrade safety | Upgrade from the previous release without losing card/badge configuration, source identity, customizations, or editor behavior. | Requires an installed HA dashboard and released artifacts; source checks do not establish this. |
+| Performance | Record bundle size, cold/warm rendering time, request counts, update behavior, and retained resources for representative schedules and multiple instances. | Shared calendar reads and input limits have tests. Establish measured browser budgets before enforcing them. |
+| Documentation | Accurate install, configuration, source contracts, availability behavior, limitations, and support information. | README and design/API docs describe current behavior. Check instructions against the qualified release and installed HA host. |
+
+## Reproduce source and artifact checks
+
+Use Node.js 24, matching CI:
+
+```sh
+npm ci
+npm test
+npm run check
+npm run pack
+git diff --exit-code -- waste-pickup-planner-card.js
+```
+
+The final command catches source changes that were not reflected in the committed
+resource used by HACS. Rebuild and commit that resource with its source changes.
+The `release/` folder is disposable packer output, not evidence of publication.
+
+For a data-module coverage report without additional tooling:
+
+```sh
+node --experimental-strip-types --experimental-test-coverage --test tests/*.test.ts
+```
+
+Do not describe this report as coverage of the whole card. Rendered components
+and editors need real browser tests; mocks of Lit or HA custom elements cannot
+establish compatibility with Home Assistant.
+
+## Browser qualification matrix
+
+Run `npm run preview` for synthetic fixtures. Check compact, hero, schedule, and
+badge in each relevant combination:
+
+- 360-pixel narrow view, 1280-pixel desktop view, and short landscape; 200% zoom.
+- Available, empty, unavailable, stale, long labels, and Polish fixtures.
+- Light, dark, and custom theme; focus indicators and readable warning text.
+- Keyboard open, Tab/Shift+Tab within the dialog, Escape, close button, and focus
+  restoration. Exercise pagination with more than 100 collections.
+- Repeated attach/detach, pending calendar responses, source replacement, and
+  connection/timezone changes; verify no duplicate timers or stale publication.
+- HA visual editors, dashboard sections, badge placement, more-info, and local
+  navigation against the actual HA host.
+
+Inspect screenshots and browser errors as well as assertions. Keep reusable
+browser installation and session management in HtmlTinkerX; keep card-specific
+fixtures and assertions here. Preview results must remain distinct from tests of
+the real HA frontend and from installation of the published artifact.

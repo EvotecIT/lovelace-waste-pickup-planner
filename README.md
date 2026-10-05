@@ -6,6 +6,9 @@ Waste collection dates for Home Assistant, grouped by day. Choose a compact card
 
 The card reads Home Assistant sensors and calendars. It does not contact municipality services, need another account, or control physical devices.
 
+See [quality qualification](docs/quality.md) for the card's acceptance criteria,
+reproducible checks, and remaining evidence gaps.
+
 ## Install
 
 ### HACS custom repository

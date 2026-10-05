@@ -44,3 +44,6 @@ jobs:
 
       - name: Pack release payload
         run: npm run pack
+
+      - name: Verify the committed HACS resource matches source
+        run: git diff --exit-code -- waste-pickup-planner-card.js
