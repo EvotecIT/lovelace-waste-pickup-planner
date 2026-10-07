@@ -46,6 +46,10 @@ export interface CardConfig {
     navigation_path?: string;
   };
 }
+export interface SourceIssue {
+  source: string;
+  reason: "sourceUnavailable" | "sourceUnsupported" | "sourceInvalid" | "sourceLoadFailed";
+}
 export interface ScheduleSnapshot {
   events: CollectionEvent[];
   status: "loading" | "ready" | "stale" | "empty" | "unavailable";
@@ -53,7 +57,7 @@ export interface ScheduleSnapshot {
   rangeEnd: string;
   timeZone: string;
   fetchedAt?: string;
-  messages: string[];
+  messages: SourceIssue[];
 }
 export interface DateGroup {
   date: string;

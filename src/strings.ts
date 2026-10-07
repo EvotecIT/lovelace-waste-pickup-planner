@@ -1,3 +1,5 @@
+import type { SourceIssue } from "./types.ts";
+
 const en = {
   title: "Waste collection",
   next: "Next collection",
@@ -16,6 +18,10 @@ const en = {
   more: "more",
   previousPage: "Previous page",
   nextPage: "Next page",
+  sourceUnavailable: "Source unavailable. Check the entity in Home Assistant.",
+  sourceUnsupported: "Select a sensor with Generic details or a calendar.",
+  sourceInvalid: "Invalid collection records. Check the source integration.",
+  sourceLoadFailed: "Could not load this source. Check the entity and connection in Home Assistant.",
 };
 const pl: typeof en = {
   title: "Odbiór odpadów",
@@ -35,6 +41,13 @@ const pl: typeof en = {
   more: "więcej",
   previousPage: "Poprzednia strona",
   nextPage: "Następna strona",
+  sourceUnavailable: "Źródło niedostępne. Sprawdź encję w Home Assistant.",
+  sourceUnsupported: "Wybierz sensor z danymi Generic lub kalendarz.",
+  sourceInvalid: "Nieprawidłowe dane odbiorów. Sprawdź integrację źródłową.",
+  sourceLoadFailed: "Nie udało się wczytać źródła. Sprawdź encję i połączenie w Home Assistant.",
 };
 export const strings = (locale: string): typeof en =>
   locale.toLowerCase().startsWith("pl") ? pl : en;
+
+export const sourceMessage = (issue: SourceIssue, locale: string): string =>
+  `${issue.source}: ${strings(locale)[issue.reason]}`;

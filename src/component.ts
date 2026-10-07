@@ -4,7 +4,7 @@ import { ScheduleController } from "./controller.ts";
 import { dateLabel, homeDate, updateLabel } from "./dates.ts";
 import { groupEvents } from "./schedule.ts";
 import { bins, chips, groupRows } from "./presentation.ts";
-import { strings } from "./strings.ts";
+import { strings, sourceMessage } from "./strings.ts";
 import { styles } from "./styles.ts";
 import { createEditor } from "./ha-editor.ts";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot } from "./types.ts";
@@ -192,7 +192,7 @@ export class WastePickupPlannerCard extends LitElement {
           ✕
         </button>
       </div>
-      ${groups.length ? groupRows(groupEvents(snapshot!.events.slice(page * pageSize, (page + 1) * pageSize)), today, locale, pageSize) : html`<p class="state">${message}</p>`}${notice}${snapshot?.messages.map((m) => html`<p class="state">${m}</p>`)}
+      ${groups.length ? groupRows(groupEvents(snapshot!.events.slice(page * pageSize, (page + 1) * pageSize)), today, locale, pageSize) : html`<p class="state">${message}</p>`}${notice}${snapshot?.messages.map((m) => html`<p class="state">${sourceMessage(m, locale)}</p>`)}
       ${pageCount > 1 ? html`<nav class="pages" aria-label=${t.schedule}>
         <button ?disabled=${page === 0} @click=${() => this.changeDetailsPage(page - 1)}>${t.previousPage}</button>
         <span aria-live="polite">${new Intl.NumberFormat(locale).format(page + 1)} / ${new Intl.NumberFormat(locale).format(pageCount)}</span>
@@ -240,7 +240,7 @@ export class WastePickupPlannerCard extends LitElement {
                     ${this.config.layout === "hero" && groups.length > 1 ? html`<div class="upcoming">${groupRows(groups.slice(1, this.config.max_groups), today, locale)}</div>` : nothing}`
               : html`<p class="state" role="status">${message}</p>`
           }
-          ${notice}${state === "unavailable" ? snapshot?.messages.map((m) => html`<p class="state">${m}</p>`) : nothing}
+          ${notice}${state === "unavailable" ? snapshot?.messages.map((m) => html`<p class="state">${sourceMessage(m, locale)}</p>`) : nothing}
           ${this.config.show_updated && snapshot?.fetchedAt ? html`<p class="updated">${t.updated}: ${updateLabel(snapshot.fetchedAt, locale, snapshot.timeZone)}</p>` : nothing}
         </section>
         ${this.config.tap_action?.action === "none" ? nothing : html`<button class="action" @click=${this.activate}>${this.config.tap_action?.action === "more-info" ? title : t.details} <span aria-hidden="true">↗</span></button>`}</ha-card

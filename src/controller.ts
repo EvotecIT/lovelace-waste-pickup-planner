@@ -8,6 +8,7 @@ import type {
   CollectionEvent,
   HomeAssistant,
   ScheduleSnapshot,
+  SourceIssue,
 } from "./types.ts";
 export class ScheduleController {
   private generation = 0;
@@ -37,7 +38,7 @@ export class ScheduleController {
     const timeZone = hass.config.time_zone,
       rangeStart = homeDate(new Date(), timeZone),
       rangeEnd = addDays(rangeStart, config.days_to_show!);
-    const base = { rangeStart, rangeEnd, timeZone, messages: [] as string[] };
+    const base = { rangeStart, rangeEnd, timeZone, messages: [] as SourceIssue[] };
     publish({ ...base, status: "loading", events: [] });
     let failures = 0,
       successes = 0,
@@ -46,14 +47,17 @@ export class ScheduleController {
       updates: string[] = [];
     await Promise.all(
       sourceIds(config).map(async (id) => {
+        let reason: SourceIssue["reason"] = "sourceLoadFailed";
         try {
           const entity = hass.states[id];
           if (
             !entity ||
             entity.state === "unavailable" ||
             (id.startsWith("calendar.") && entity.state === "unknown")
-          )
-            throw new Error(`${id} is unavailable.`);
+          ) {
+            reason = "sourceUnavailable";
+            throw new Error(reason);
+          }
           let entries: CollectionEvent[];
           let fetchedAt: string | undefined;
           if (id.startsWith("calendar."))
@@ -64,12 +68,14 @@ export class ScheduleController {
             );
           else {
             const result = sensorEvents(entity);
-            if (!result.supported)
-              throw new Error(
-                `${id}: select a sensor with Generic details or a calendar.`,
-              );
-            if (result.invalid)
-              throw new Error(`${id} contains invalid collection records.`);
+            if (!result.supported) {
+              reason = "sourceUnsupported";
+              throw new Error(reason);
+            }
+            if (result.invalid) {
+              reason = "sourceInvalid";
+              throw new Error(reason);
+            }
             entries = result.events;
             fetchedAt = result.fetchedAt;
           }
@@ -78,14 +84,10 @@ export class ScheduleController {
           if (fetchedAt) updates.push(fetchedAt);
           events.push(...entries);
           successes++;
-        } catch (error) {
+        } catch {
           if (generation !== this.generation) return;
           failures++;
-          base.messages.push(
-            error instanceof Error
-              ? error.message
-              : `${id} could not be loaded.`,
-          );
+          base.messages.push({ source: id, reason });
           const cached = this.cache.get(id);
           if (cached) {
             cachedSources++;

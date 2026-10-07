@@ -73,13 +73,19 @@ const entries = () => [
 function hass(state = "ready") {
   let upcoming = entries();
   if (state === "empty") upcoming = [];
+  if (state === "large")
+    upcoming = Array.from({ length: 125 }, (_, index) => ({
+      date: day(1 + Math.floor(index / 5)),
+      type: `Collection ${String(index + 1).padStart(3, "0")}`,
+      type_id: `collection_${index + 1}`,
+    }));
   if (state === "long")
     upcoming[0].type =
       "Household packaging, cartons and non-recyclable mixed materials with a very long collection name";
   return {
     connection,
     config: { time_zone: timeZone },
-    locale: { language: state === "pl" ? "pl" : "en" },
+    locale: { language: document.querySelector("#language").value },
     states: {
       "sensor.waste_schedule": {
         entity_id: "sensor.waste_schedule",
@@ -125,6 +131,10 @@ document.querySelector("#state").addEventListener("change", (e) => {
       });
     card.hass = hass(e.target.value);
   }
+});
+document.querySelector("#language").addEventListener("change", (e) => {
+  for (const card of cards)
+    card.hass = { ...card.hass, locale: { language: e.target.value } };
 });
 let theme = 0;
 document.querySelector("#theme").onclick = () => {
