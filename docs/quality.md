@@ -17,7 +17,7 @@ build, or supported HA changes.
 | --- | --- | --- |
 | Data contracts | Preserve complete labels, source identity, all-day dates, home timezone, overrides, and provider timestamps. Exercise malformed and bounded inputs. | `tests/schedule.test.ts` covers the core contracts. Expand malformed calendar and sensor boundary cases where they affect displayed status. |
 | Availability | Distinguish loading, empty, unavailable, and stale results. Retain last-known data only for the same connection and source configuration. | Controller tests cover outages, recovery, connection/timezone changes, and pending-response fencing. Browser state transitions remain to be automated. |
-| Resource lifetime | Repeated attachment/removal and editor changes release timers/listeners, suppress obsolete results, and keep request volume bounded. | Calendar-cache tests cover shared requests, expiry, revalidation, and pressure. Repeated component lifecycle and retained-resource measurements remain open. |
+| Resource lifetime | Repeated attachment/removal and editor changes release timers/listeners, suppress obsolete results, and keep request volume bounded. | Calendar-cache tests cover shared requests, expiry, revalidation, and pressure. The packaged-browser check below covers repeated attachment/removal, timer/listener release, pending-response fencing, and reopening. Heap retention and installed-HA lifecycle measurements remain open. |
 | Types | Strict checking of every production TypeScript module. | `npm run check` uses `strict: true` and includes all `src/**/*.ts`. Dependency declaration checking is skipped; this is not a claim about third-party type quality. |
 | Tests | Meaningful unit coverage of data contracts plus browser coverage of components and editors. Report the measured denominator. | The Node suite exercises seven data/localization modules. It does not import components, editors, presentation, or styles, so its coverage percentage is not whole-product coverage. |
 | Accessibility | Keyboard-only activation, dialog focus containment and restoration, Escape dismissal, accessible names, readable contrast, zoom/reflow, and non-color status cues. | Preview checks cover Enter activation, Tab/Shift+Tab modal navigation, keyboard pagination across 125 collections, visible focus at 360-pixel width, and Escape focus restoration. Native modal behavior keeps background controls out of the active accessibility tree. Selected text contrast is measured below. Automated browser assertions, the full contrast/zoom matrix, other browser engines, and assistive-technology checks remain open. |
@@ -73,7 +73,7 @@ badge in each relevant combination:
   navigation against the actual HA host.
 
 The preview's **125 collections** fixture exercises both dialog pages. The first
-page contains collections 001–100 and the second contains 101–125. Use the
+page contains collections 001â€“100 and the second contains 101â€“125. Use the
 independent language selector to inspect each state in English and Polish.
 
 ### Measured preview text contrast
@@ -100,3 +100,30 @@ Inspect screenshots and browser errors as well as assertions. Keep reusable
 browser installation and session management in HtmlTinkerX; keep card-specific
 fixtures and assertions here. Preview results must remain distinct from tests of
 the real HA frontend and from installation of the published artifact.
+
+
+## Packaged-browser lifecycle evidence
+
+On source `129b010cd1c54ea1b7ac01d487f62523b0764ba6`, the committed resource
+with SHA-256 `B285C075390CFD15A0F28432C979BC0229D81681DCF7B79AA692B642BB90DAC1`
+passed the following synthetic checks in Chromium 154 on Windows at 1280 × 720.
+The browser loaded the JavaScript resource through the loopback preview server.
+
+| Scenario | Observed result |
+| --- | --- |
+| Reattach the same card 20 times, then repeat for the badge | All 40 attachments render the synthetic schedule. Each attachment owns one interval and one document visibility listener; both measured counts return to zero after each removal. |
+| Card and badge share a pending calendar read, then both are removed | One calendar API call is made. Completing the response leaves both detached rendered trees unchanged. |
+| Reattach both instances after that response completes | Both render the returned collection, reusing the shared response; the API call count remains one. |
+| Inspect the restored preview and browser log | Hero, compact, schedule, and badge remain rendered; no browser warnings or errors are reported. |
+
+For the resource check, instrument interval creation/removal and document
+`visibilitychange` registration/removal before attaching the test instances.
+Await each component's render completion between attachment and removal. Restore
+the original browser functions and remove the test instances when finished.
+For the pending-read check, give the card and badge the same synthetic HA connection
+and unresolved calendar response; resolve it after removal, then reattach both.
+
+These observations cover the measured timer/listener ownership and rendered result
+of the shipped bundle. They do not measure garbage collection or total retained
+heap, prove cancellation of HA's shared HTTP transport, or qualify installed HA,
+other browser engines, editor changes, or an upgrade from a published release.
