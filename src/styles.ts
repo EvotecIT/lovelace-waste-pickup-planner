@@ -171,14 +171,14 @@ export const styles = css`
     border: 0;
     border-top: 1px solid var(--divider-color, #ddd);
     background: transparent;
-    color: var(--primary-color, #03a9f4);
+    color: var(--primary-text-color, #212121);
     padding: 10px 20px;
     font-size: 13px;
     font-weight: 600;
     text-align: start;
   }
   .action:hover {
-    background: var(--secondary-background-color, #f5f5f5);
+    background: color-mix(in srgb, currentColor 8%, transparent);
   }
   .state {
     padding: 12px 0;
@@ -190,7 +190,9 @@ export const styles = css`
     margin: 14px 0 0;
     font-size: 12px;
     line-height: 1.5;
-    color: var(--warning-color, #b26a00);
+    color: var(--primary-text-color, #212121);
+    border-inline-start: 3px solid var(--warning-color, #b26a00);
+    padding-inline-start: 10px;
   }
   .updated {
     margin: 12px 0 0;

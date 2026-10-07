@@ -20,7 +20,7 @@ build, or supported HA changes.
 | Resource lifetime | Repeated attachment/removal and editor changes release timers/listeners, suppress obsolete results, and keep request volume bounded. | Calendar-cache tests cover shared requests, expiry, revalidation, and pressure. Repeated component lifecycle and retained-resource measurements remain open. |
 | Types | Strict checking of every production TypeScript module. | `npm run check` uses `strict: true` and includes all `src/**/*.ts`. Dependency declaration checking is skipped; this is not a claim about third-party type quality. |
 | Tests | Meaningful unit coverage of data contracts plus browser coverage of components and editors. Report the measured denominator. | The Node suite exercises seven data/localization modules. It does not import components, editors, presentation, or styles, so its coverage percentage is not whole-product coverage. |
-| Accessibility | Keyboard-only activation, dialog focus containment and restoration, Escape dismissal, accessible names, readable contrast, zoom/reflow, and non-color status cues. | Preview checks cover Enter activation, Tab/Shift+Tab modal navigation, keyboard pagination across 125 collections, visible focus at 360-pixel width, and Escape focus restoration. Native modal behavior keeps background controls out of the active accessibility tree. Automated browser assertions, contrast/zoom checks, other browser engines, and assistive-technology checks remain open. |
+| Accessibility | Keyboard-only activation, dialog focus containment and restoration, Escape dismissal, accessible names, readable contrast, zoom/reflow, and non-color status cues. | Preview checks cover Enter activation, Tab/Shift+Tab modal navigation, keyboard pagination across 125 collections, visible focus at 360-pixel width, and Escape focus restoration. Native modal behavior keeps background controls out of the active accessibility tree. Selected text contrast is measured below. Automated browser assertions, the full contrast/zoom matrix, other browser engines, and assistive-technology checks remain open. |
 | Responsive layout | Compact, hero, schedule, badge, and dialog at narrow/wide widths and short landscape height; complete long labels and overflow navigation. | The standalone preview supplies representative layouts and long labels. Automate the viewport matrix and verify it in HA. |
 | Themes and localization | Light, dark, and custom themes; English/Polish labels; dates independent of viewer timezone; no untranslated user-facing errors in supported languages. | Date tests cover home timezone, DST, and localized provider timestamps. Source failures use translated reasons rather than upstream error text. Preview checks cover an existing error switching from English to Polish, narrow dark cards and a wide light dialog. Full theme/localization and installed-HA checks remain open. |
 | Configuration | YAML and visual editors round-trip supported options, preserve unknown supported values, reject unsafe input, and report actionable errors. | Config validation has focused tests. HA editor round-trip and invalid-input interaction proof remain open. |
@@ -75,6 +75,26 @@ badge in each relevant combination:
 The preview's **125 collections** fixture exercises both dialog pages. The first
 page contains collections 001–100 and the second contains 101–125. Use the
 independent language selector to inspect each state in English and Polish.
+
+### Measured preview text contrast
+
+The stale notice and action use the theme's primary text color. A warning-colored
+border supplements the notice text, and hover adds a translucent text-color tint
+over the card background. This avoids a fixed light hover background in dark themes.
+
+Browser-computed colors in the supplied preview themes give these ratios:
+
+| Preview theme | Stale notice | Hovered action | Secondary and error text |
+| --- | ---: | ---: | ---: |
+| Dark | 12.95:1 | 10.44:1 | 6.52:1 |
+| Light | 14.58:1 | 12.55:1 | 5.15:1 |
+| Custom | 10.83:1 | 8.67:1 | 6.57:1 |
+
+These measurements use the rendered foreground/background colors and composite
+the 8% hover tint over the card background before calculating relative luminance.
+All measured pairs exceed the [4.5:1 minimum for normal text](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html).
+They do not qualify other text, focus indicators, arbitrary user themes, or the HA
+host. Recheck affected pairs when theme colors or styles change.
 
 Inspect screenshots and browser errors as well as assertions. Keep reusable
 browser installation and session management in HtmlTinkerX; keep card-specific
