@@ -6,6 +6,7 @@ import { validateConfig } from "../src/config.ts";
 import { artworkColor, projectEvents, groupEvents } from "../src/schedule.ts";
 import { readCalendar } from "../src/calendar-cache.ts";
 import { ScheduleController } from "../src/controller.ts";
+import { sourceMessage } from "../src/strings.ts";
 import type {
   HassEntity,
   HomeAssistant,
@@ -15,6 +16,35 @@ const entity = (
   attributes: Record<string, unknown>,
   state = "ready",
 ): HassEntity => ({ entity_id: "sensor.waste", state, attributes });
+
+test("source failures retain actionable reasons without upstream error text and localize at display time", async () => {
+  const hass: HomeAssistant = {
+    connection: {},
+    config: { time_zone: "UTC" },
+    states: {
+      "sensor.unsupported": { ...entity({}), entity_id: "sensor.unsupported" },
+      "sensor.invalid": { ...entity({ upcoming: [{ date: "invalid", type: "Paper" }] }), entity_id: "sensor.invalid" },
+      "calendar.failed": { entity_id: "calendar.failed", state: "off", attributes: {} },
+    },
+    callApi: async () => { throw new Error("upstream-private-error-detail"); },
+  };
+  let snapshot: ScheduleSnapshot | undefined;
+  await new ScheduleController().update(hass, validateConfig({
+    type: "custom:waste-pickup-planner-card",
+    entities: ["sensor.missing", "sensor.unsupported", "sensor.invalid", "calendar.failed"],
+  }), value => { snapshot = value; });
+  assert.equal(snapshot!.status, "unavailable");
+  assert.deepEqual(snapshot!.messages.sort((a, b) => a.source.localeCompare(b.source)), [
+    { source: "calendar.failed", reason: "sourceLoadFailed" },
+    { source: "sensor.invalid", reason: "sourceInvalid" },
+    { source: "sensor.missing", reason: "sourceUnavailable" },
+    { source: "sensor.unsupported", reason: "sourceUnsupported" },
+  ]);
+  const issue = snapshot!.messages[0];
+  assert.equal(sourceMessage(issue, "en"), "calendar.failed: Could not load this source. Check the entity and connection in Home Assistant.");
+  assert.equal(sourceMessage(issue, "pl-PL"), "calendar.failed: Nie udało się wczytać źródła. Sprawdź encję i połączenie w Home Assistant.");
+  assert.equal(sourceMessage(issue, "de"), sourceMessage(issue, "en"));
+});
 test("generic v2 preserves complete comma-containing names; v3 preserves source metadata", () => {
   const result = sensorEvents(
     entity({

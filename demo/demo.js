@@ -79,7 +79,7 @@ function hass(state = "ready") {
   return {
     connection,
     config: { time_zone: timeZone },
-    locale: { language: state === "pl" ? "pl" : "en" },
+    locale: { language: document.querySelector("#language").value },
     states: {
       "sensor.waste_schedule": {
         entity_id: "sensor.waste_schedule",
@@ -125,6 +125,10 @@ document.querySelector("#state").addEventListener("change", (e) => {
       });
     card.hass = hass(e.target.value);
   }
+});
+document.querySelector("#language").addEventListener("change", (e) => {
+  for (const card of cards)
+    card.hass = { ...card.hass, locale: { language: e.target.value } };
 });
 let theme = 0;
 document.querySelector("#theme").onclick = () => {
