@@ -73,6 +73,12 @@ const entries = () => [
 function hass(state = "ready") {
   let upcoming = entries();
   if (state === "empty") upcoming = [];
+  if (state === "large")
+    upcoming = Array.from({ length: 125 }, (_, index) => ({
+      date: day(1 + Math.floor(index / 5)),
+      type: `Collection ${String(index + 1).padStart(3, "0")}`,
+      type_id: `collection_${index + 1}`,
+    }));
   if (state === "long")
     upcoming[0].type =
       "Household packaging, cartons and non-recyclable mixed materials with a very long collection name";
