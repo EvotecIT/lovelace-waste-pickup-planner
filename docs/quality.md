@@ -72,7 +72,7 @@ badge in each relevant combination:
 - HA visual editors, dashboard sections, badge placement, more-info, and local
   navigation against the actual HA host.
 
-The preview's **125 collections** fixture exercises both dialog pages. The first
+The preview's **125 collections** fixture exercises bin pages and both dialog pages. The first
 page contains collections 001â€“100 and the second contains 101â€“125. Use the
 independent language selector to inspect each state in English and Polish.
 
@@ -156,3 +156,93 @@ show the corrected bundle in the dark theme.
 and [dark overview](../assets/bin-overview-dark.jpg) show those synthetic states.
 The integration controls were tested against its local v3 prototype; they do not
 establish upstream acceptance or installation of the released card through HACS.
+
+## Overview and simplified editor
+
+The resource with SHA-256 `6612E16DBBC20F3A4C87D1D3A32D795B3AEF4783A2D7FCE7474770A80F5BB661`
+was exercised in an isolated Home Assistant 2026.9.4 instance with synthetic sensors
+and a calendar. Native checks covered English/light and Polish/dark interfaces,
+1270 × 720 and 1440 × 1000 desktop views, and 390 × 844 and 320 × 568 mobile views.
+
+- The bin overview preserves separate source/bin identities after display-name changes.
+- Selecting a bin filters the upcoming list and schedule dialog; Escape closes the dialog.
+- Identical labels from two addresses have source subtitles and independent filters.
+- Sensor and calendar bins appear in the ordinary editor. Hidden bins remain editable.
+- Local color reset restores source metadata; a calendar without a color stays neutral.
+- Only one bin editing panel opens at a time. Saved name and scope survive reopening.
+- Editing the title preserves implicit appearance defaults rather than saving unrelated fields.
+- Native, Modern, and Minimal cards render alongside the existing compact card and badge.
+- The badge retains native content sizing for long labels and unavailable sources.
+- Bin editing buttons announce the visible alias and source in English and Polish.
+
+[Native overview](../assets/overview-native-dark.png),
+[desktop editor](../assets/overview-editor.png), and
+[mobile editor](../assets/overview-editor-mobile.png) show the actual HA frontend.
+The standalone preview additionally covered 125-bin pagination, long labels,
+localized stale/unavailable states, and an 844 × 390 landscape viewport. A fresh
+native source-details smoke check and the final preview reported no browser errors.
+Two earlier native-editor console entries contained opaque HA objects, without
+an actionable stack trace; these are not evidence of an error-free entire session.
+
+This is candidate-bundle proof, not a published release, a HACS installation,
+or a complete qualification of arbitrary themes, browser engines, heap retention,
+and assistive technology. The overview discovers bins in supplied records within
+the configured range; it does not establish a permanent physical-bin inventory.
+
+The editor remediation resource with SHA-256
+`71C7F467539B376DC9F758EAFBBE24BCD6E67FAE043100455B17842BCB252A8C`
+was checked in the same HA version with a fresh synthetic lab and dark desktop
+interface. Density edits save only the selected setting; switching to Overview
+retains automatic artwork. Appearance edits followed by removing a second source
+retain automatic source labels. An explicit artwork preference survives layout
+changes, and the saved overview preserves the legacy single-entity configuration.
+Category-hidden bins revealed by a local choice display Customized while other
+hidden bins remain absent from the card. Arabic locale checks cover both pages
+of a 125-bin inventory and the schedule day numeral. The final session reported
+no browser errors. Type checking, 38 contract tests, and release packing pass;
+a bounded closure review found no remaining actionable issue in these paths.
+
+The Sections sizing resource with SHA-256
+`E9B871478F2900271E5D703D06D086D896BEE5C05C285181BDD0FCD97C820C35`
+was checked in native HA 2026.9.4 at 1270 × 720. Implicit and explicit compact
+cards occupy the same 459 px section width as hero, schedule, and overview cards.
+A saved six-column choice remains 225.5 px wide; the badge retains its measured
+147.74 × 51.72 px size. This preserves the established 12-column default while
+respecting user sizes. The final browser session reported no errors, and an
+owner-level sizing review found no remaining actionable issue in the affected
+Sections, Masonry sizing, or badge containment contracts. Final native replay
+covers Sections; existing Masonry size estimates are unchanged.
+
+The collection display resource with SHA-256
+`42D64C527198F1D020A460652A3A61DFC8695A20C59E20B18AD71877B0D5471D`
+was checked in native HA 2026.9.4 at 1270 × 720 and 320 × 568. Category aliases
+that make individual choices collide retain the original bin name: Bio · Small bio
+and Bio · Large bio remain separate filters and editor controls. Hiding Small bio
+saves its original label and selected source; the other bin remains visible.
+Duplicate source names also include the selected entity ID, with narrow labels
+wrapping inside the controls. A source-specific filter and native entity details
+target the original entity. A single selected source retains its concise name.
+
+The preceding locale resource, SHA-256
+`9493BDB99A58EA6F96C05FD1C063C183C357A5F6761092D106534863CCCAAC9D`,
+was checked at 1270 × 720, 390 × 844, and 320 × 568. Polish orders Zebra before
+Żaba; English orders Żaba before Zebra. Overview, editor, and schedule-dialog
+ordering follow the active locale. Source labels, filtering, and identity paths
+received an owner-level review, followed by targeted confirmation of the alias
+correction. Type checking, 41 contract tests, and release packing pass. These
+native sessions logged opaque HA frontend objects without actionable stacks;
+they do not establish an error-free session.
+
+The bin-choice resource with SHA-256
+`D4CDE17534A70D7E8EC5BE51559B7EA78B52B0C383338AF777CFE06C6314BF82`
+was checked in native HA 2026.9.4 at 1270 × 720 and 320 × 568. Two supplied
+type IDs with the same provider label remain distinguishable as Bio · food and
+Bio · garden in overview filters and editing controls. Aliases retain those
+qualifiers. Current records and saved missing-bin overrides share one editor
+naming inventory, so partial schedule availability also preserves distinct
+choices and panel names. Hiding a missing garden bin retains its original type,
+source, and provider label in the saved configuration. An owner-level naming
+review and targeted confirmation found no remaining actionable issue in these
+paths. Type checking, 42 contract tests, and release packing pass. These native
+sessions include opaque HA frontend console objects without actionable stacks;
+they do not establish an error-free entire session.

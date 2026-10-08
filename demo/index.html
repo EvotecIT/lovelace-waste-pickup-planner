@@ -110,6 +110,8 @@
       </div>
       <div>
         <button id="theme">Theme</button>
+        <select id="appearance" aria-label="Appearance"><option value="native">Native Home Assistant</option><option value="modern">Modern</option><option value="minimal">Minimal</option></select>
+        <select id="density" aria-label="Density"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select>
         <select id="state" aria-label="Schedule state">
           <option value="ready">Available</option>
           <option value="empty">Empty</option>
@@ -126,6 +128,7 @@
     </header>
     <div id="badge"></div>
     <main>
+      <section class="panel"><p class="label">OVERVIEW</p><div id="overview"></div></section>
       <section class="panel">
         <p class="label">HERO</p>
         <div id="hero"></div>

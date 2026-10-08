@@ -17,6 +17,8 @@ export interface CollectionEvent {
   entityId: string;
   date: string;
   label: string;
+  /** Original provider label preserves bin identity after a local display-name override. */
+  originalLabel?: string;
   typeId?: string;
   icon?: string;
   color?: string;
@@ -36,7 +38,10 @@ export interface CardConfig {
   entity?: string;
   entities?: string[];
   title?: string;
-  layout?: "compact" | "hero" | "schedule";
+  layout?: "compact" | "hero" | "schedule" | "overview";
+  appearance?: "native" | "modern" | "minimal";
+  density?: "comfortable" | "compact";
+  show_source?: boolean;
   days_to_show?: number;
   max_groups?: number;
   show_artwork?: boolean;

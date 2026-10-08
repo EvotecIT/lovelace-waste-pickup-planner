@@ -41,7 +41,7 @@ export const groupRows = (groups: DateGroup[], today: string, locale: string, ch
     return html`<div class="group">
       <div class="day" aria-hidden="true">
         ${new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(d)}<strong
-          >${d.getUTCDate()}</strong
+          >${new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" }).format(d)}</strong
         >
       </div>
       <div class="group-body">

@@ -7,14 +7,17 @@ import { bins, chips, groupRows } from "./presentation.ts";
 import { strings, sourceMessage } from "./strings.ts";
 import { styles } from "./styles.ts";
 import { createEditor } from "./ha-editor.ts";
-import { suggestedSources } from "./collections.ts";
+import { binKey, collectionOrder, sourceName, suggestedSources } from "./collections.ts";
+import { overview } from "./overview.ts";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot } from "./types.ts";
 export class WastePickupPlannerCard extends LitElement {
   static styles = styles;
-  static properties = { snapshot: { state: true }, detailsOpen: { state: true }, detailsPage: { state: true } };
+  static properties = { snapshot: { state: true }, detailsOpen: { state: true }, detailsPage: { state: true }, selectedBin: { state: true }, binPage: { state: true } };
   protected badge = false;
   private detailsOpen = false;
   private detailsPage = 0;
+  private selectedBin?: string;
+  private binPage = 0;
   private config?: CardConfig;
   private ha?: HomeAssistant;
   private controller = new ScheduleController();
@@ -28,7 +31,11 @@ export class WastePickupPlannerCard extends LitElement {
     const old = this.ha;
     this.ha = value;
     if (!old || old.connection !== value.connection ||
-        old.config.time_zone !== value.config.time_zone) this.snapshot = undefined;
+        old.config.time_zone !== value.config.time_zone) {
+      this.snapshot = undefined;
+      this.selectedBin = undefined;
+      this.binPage = 0;
+    }
     if (
       !old ||
       old.connection !== value.connection ||
@@ -57,7 +64,12 @@ export class WastePickupPlannerCard extends LitElement {
     // Projection changes must not display the old selection while a read is pending.
     if (sourcesChanged || previous?.days_to_show !== config.days_to_show ||
         JSON.stringify(previous?.overrides) !== JSON.stringify(config.overrides))
-      this.snapshot = undefined;
+      {
+        this.snapshot = undefined;
+        this.selectedBin = undefined;
+        this.binPage = 0;
+        this.detailsPage = 0;
+      }
     this.config = config;
     this.refresh();
     this.requestUpdate();
@@ -76,6 +88,7 @@ export class WastePickupPlannerCard extends LitElement {
     };
   }
   getCardSize(): number {
+    if (this.config?.layout === "overview") return 8;
     return this.config?.layout === "schedule"
       ? Math.min(this.config.max_groups! + 1, 8)
       : this.config?.layout === "hero"
@@ -145,6 +158,9 @@ export class WastePickupPlannerCard extends LitElement {
     history.pushState(null, "", "/config/integrations/integration/waste_collection_schedule");
     window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
   }
+  private sourceDetails(entityId: string): void {
+    this.dispatchEvent(new CustomEvent("hass-more-info", { detail: { entityId }, bubbles: true, composed: true }));
+  }
   private async changeDetailsPage(page: number): Promise<void> {
     this.detailsPage = page;
     await this.updateComplete;
@@ -155,9 +171,14 @@ export class WastePickupPlannerCard extends LitElement {
     const locale = this.locale(),
       t = strings(locale),
       snapshot = this.snapshot;
-    const groups = groupEvents(snapshot?.events ?? []),
+    const events = [...(snapshot?.events ?? [])].sort(collectionOrder(locale));
+    const groups = groupEvents(events),
       next = groups[0],
       today = snapshot?.rangeStart ?? this.day ?? "2000-01-01";
+    const selected = this.config.layout === "overview" && snapshot?.events.some(e => binKey(e) === this.selectedBin) ? this.selectedBin : undefined;
+    const detailEvents = selected ? events.filter(e => binKey(e) === selected) : events;
+    const sources = sourceIds(this.config);
+    const showSource = this.config.show_source ?? sources.length > 1;
     const title = this.config.title ?? t.title;
     const state = snapshot?.status ?? "loading";
     const message =
@@ -179,7 +200,7 @@ export class WastePickupPlannerCard extends LitElement {
         ? html`<p class="notice" role="status">${t.stale}</p>`
         : nothing;
     const pageSize = 100;
-    const pageCount = Math.max(1, Math.ceil((snapshot?.events.length ?? 0) / pageSize));
+    const pageCount = Math.max(1, Math.ceil(detailEvents.length / pageSize));
     const page = Math.min(this.detailsPage, pageCount - 1);
     const details = this.detailsOpen ? html`<dialog aria-label=${t.schedule} @close=${() => { this.detailsOpen = false; }}>
       <div class="heading">
@@ -192,7 +213,7 @@ export class WastePickupPlannerCard extends LitElement {
           ✕
         </button>
       </div>
-      ${groups.length ? groupRows(groupEvents(snapshot!.events.slice(page * pageSize, (page + 1) * pageSize)), today, locale, pageSize) : html`<p class="state">${message}</p>`}${notice}${snapshot?.messages.map((m) => html`<p class="state">${sourceMessage(m, locale)}</p>`)}
+      ${detailEvents.length ? groupRows(groupEvents(detailEvents.slice(page * pageSize, (page + 1) * pageSize)), today, locale, pageSize) : html`<p class="state">${message}</p>`}${notice}${snapshot?.messages.map((m) => html`<p class="state">${sourceMessage(m, locale)}</p>`)}
       ${pageCount > 1 ? html`<nav class="pages" aria-label=${t.schedule}>
         <button ?disabled=${page === 0} @click=${() => this.changeDetailsPage(page - 1)}>${t.previousPage}</button>
         <span aria-live="polite">${new Intl.NumberFormat(locale).format(page + 1)} / ${new Intl.NumberFormat(locale).format(pageCount)}</span>
@@ -213,7 +234,7 @@ export class WastePickupPlannerCard extends LitElement {
         ? html`<div class="badge" role="img" aria-label=${label} title=${description}>${content}</div>`
         : html`<button class="badge" aria-label=${label} title=${description} @click=${this.activate}>${content}</button>${details}`;
     }
-    return html`<ha-card
+    return html`<ha-card data-appearance=${this.config.appearance ?? "native"} data-density=${this.config.density ?? "comfortable"}
         ><section class=${`surface ${this.config.layout}`}>
           <div class="heading">
             <h2>${title}</h2>
@@ -221,7 +242,11 @@ export class WastePickupPlannerCard extends LitElement {
           </div>
           ${
             next
-              ? this.config.layout === "schedule"
+              ? this.config.layout === "overview"
+                ? overview({ events, groups, today, locale, artwork: this.config.show_artwork ?? true,
+                    showSource, sources, hass: this.ha, maxGroups: this.config.max_groups!, selected, page: this.binPage,
+                    select: key => { this.selectedBin = key; this.detailsPage = 0; }, changePage: page => { this.binPage = page; } })
+                : this.config.layout === "schedule"
                 ? groupRows(
                     groups.slice(0, this.config.max_groups),
                     today,
@@ -242,6 +267,10 @@ export class WastePickupPlannerCard extends LitElement {
           }
           ${notice}${state === "unavailable" ? snapshot?.messages.map((m) => html`<p class="state">${sourceMessage(m, locale)}</p>`) : nothing}
           ${this.config.show_updated && snapshot?.fetchedAt ? html`<p class="updated">${t.updated}: ${updateLabel(snapshot.fetchedAt, locale, snapshot.timeZone)}</p>` : nothing}
+          ${this.config.layout === "overview" ? html`<div class=${`source-status ${state}`} role="status">
+            <ha-icon aria-hidden="true" .icon=${state === "ready" ? "mdi:check-circle-outline" : state === "stale" || state === "unavailable" ? "mdi:alert-circle-outline" : "mdi:calendar-outline"}></ha-icon>
+            <span>${state === "ready" ? t.ready : state === "stale" ? t.staleBadge : message}</span>
+          </div><div class="source-links" aria-label=${t.sources}>${sources.map(id => html`<button @click=${() => this.sourceDetails(id)}>${sourceName(this.ha, id, sources)} <span aria-hidden="true">↗</span></button>`)}</div>` : nothing}
         </section>
         ${this.config.tap_action?.action === "none" ? nothing : html`<button class="action" @click=${this.activate}>${this.config.tap_action?.action === "more-info" ? title : t.details} <span aria-hidden="true">↗</span></button>`}
         ${this.config.show_manage_bins ? html`<button class="action" @click=${this.manageBins}>${t.manageBins} <span aria-hidden="true">⚙</span></button>` : nothing}</ha-card

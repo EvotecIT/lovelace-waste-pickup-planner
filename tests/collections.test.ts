@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { availableBins, overrideInheritance, suggestedSources } from "../src/collections.ts";
+import { availableBins, binKey, binName, collectionOrder, nextBins, overrideInheritance, sourceName, suggestedSources } from "../src/collections.ts";
 import { sensorEvents } from "../src/adapters.ts";
 import { validateConfig } from "../src/config.ts";
 import { projectEvents } from "../src/schedule.ts";
@@ -15,6 +15,35 @@ const entity = { entity_id: "sensor.waste", state: "ready", attributes: { upcomi
 const events = sensorEvents(entity).events;
 const project = (overrides = config as typeof config & { overrides?: import("../src/types.ts").TypeOverride[] }) =>
   projectEvents([...events, events[0]], overrides, "2026-10-01", "2026-11-01");
+
+test("category aliases preserve distinct original names in individual bin choices", () => {
+  const projected = project({ ...config, overrides: [{ type: "organic", name: "Bio", color: "#111111" }] });
+  assert.deepEqual(projected.map(event => binName(event, projected)).sort(), ["Bio · Large bio", "Bio · Small bio"]);
+  assert.deepEqual(projected.map(binKey).sort(), events.map(binKey).sort());
+  assert.equal(binName(projected[0], [projected[0], { ...projected[0], date: "2026-10-20" }]), "Bio");
+  const otherSource = { ...projected[1], sourceId: "sensor.other" };
+  assert.equal(binName(projected[0], [projected[0], otherSource]), "Bio");
+});
+
+test("same provider labels distinguish type IDs before and after aliases or missing records", () => {
+  const raw = sensorEvents({ ...entity, attributes: { upcoming: [
+    { date: "2026-10-12", type: "Bio", type_id: "food", color: "#111111" },
+    { date: "2026-10-12", type: "Bio", type_id: "garden", color: "#111111" },
+  ] } }).events;
+  const check = (choices: typeof raw) => assert.deepEqual(choices.map(e => binName(e, choices)), ["Bio · food", "Bio · garden"]);
+  check(raw);
+  const projected = projectEvents(raw, config, "2026-10-01", "2026-11-01");
+  check(projected);
+  const aliases = projected.map(e => ({ ...e, label: "Organic" }));
+  assert.deepEqual(aliases.map(e => binName(e, aliases)), ["Organic · food", "Organic · garden"]);
+  const saved = raw.map(e => ({ sourceId: e.sourceId, typeId: e.typeId, originalLabel: e.label, label: e.label }));
+  assert.deepEqual(saved.map(e => binName(e, saved)), ["Bio · food", "Bio · garden"]);
+  assert.equal(binName(raw[0], [raw[0], { ...raw[0], date: "2026-10-20" }]), "Bio");
+  const legacy = { ...raw[0], typeId: undefined };
+  assert.equal(binName(legacy, [legacy, raw[0]]), "Bio");
+  assert.equal(binName(raw[0], [legacy, raw[0]]), "Bio · food");
+  assert.deepEqual(raw.map(binKey), projected.map(binKey));
+});
 
 test("distinct provider bins in one category survive while repeated records deduplicate", () => {
   assert.deepEqual(project().map(e => [e.label, e.color]), [["Large bio", "#FF00FF"], ["Small bio", "#123456"]]);
@@ -84,4 +113,67 @@ test("new override scope and management settings reject invalid configuration", 
   assert.throws(() => validateConfig({ ...config, overrides: [{ type: "organic", source: "https://example.com" }] }));
   assert.throws(() => validateConfig({ ...config, overrides: [{ type: "organic", label: " " }] }));
   assert.throws(() => validateConfig({ ...config, show_manage_bins: "true" as unknown as boolean }));
+});
+
+test("overview next dates preserve distinct bins and sources even after identical aliases", () => {
+  const projected = projectEvents([
+    ...events, { ...events[0], date: "2026-10-20" }, { ...events[0], sourceId: "sensor.other" },
+  ], { ...config, overrides: [{ type: "organic", name: "Bio" }] }, "2026-10-01", "2026-11-01");
+  const bins = nextBins(projected);
+  assert.equal(bins.length, 3);
+  assert.equal(new Set(bins.map(binKey)).size, 3);
+  assert.ok(bins.every(b => b.label === "Bio" && b.date === "2026-10-12"));
+  assert.equal(bins.find(b => b.originalLabel === "Small bio" && b.sourceId === "sensor.waste")?.color, "#123456");
+  assert.equal(projected.filter(e => binKey(e) === binKey(bins[0])).length, bins[0].originalLabel === "Small bio" && bins[0].sourceId === "sensor.waste" ? 2 : 1);
+});
+
+test("calendar choices use selected raw records so hidden bins remain editable", () => {
+  const hass: HomeAssistant = { connection: {}, config: { time_zone: "UTC" }, callApi: async <T>() => [] as T, states: { "sensor.waste": entity } };
+  const calendar = { sourceId: "calendar.waste", entityId: "calendar.waste", label: "Glass, bottles", date: "2026-10-12" };
+  const selected = { ...config, entity: undefined, entities: ["sensor.waste", "calendar.waste"], overrides: [{ type: calendar.label, hidden: true }] };
+  assert.equal(projectEvents([calendar], selected, "2026-10-01", "2026-11-01").length, 0);
+  assert.equal(availableBins(hass, selected, [calendar, calendar, { ...calendar, sourceId: "calendar.other" }]).length, 3);
+  assert.deepEqual(availableBins(hass, { ...config, entity: "calendar.waste" }, [calendar]), [calendar]);
+});
+
+test("appearance options accept supported values and preserve existing card defaults", () => {
+  assert.equal(validateConfig(config).layout, "compact");
+  assert.equal(validateConfig(config).appearance, undefined);
+  assert.equal(validateConfig(config).density, undefined);
+  assert.equal(validateConfig({ ...config, layout: "overview", appearance: "modern", density: "compact", show_source: true }).layout, "overview");
+  assert.throws(() => validateConfig({ ...config, appearance: "glass" as never }));
+  assert.throws(() => validateConfig({ ...config, density: "tiny" as never }));
+  assert.throws(() => validateConfig({ ...config, show_source: "yes" as never }));
+});
+
+test("the selected locale orders equal-date bins, editor inventory, and aliased display records", () => {
+  const records = sensorEvents({ ...entity, attributes: { upcoming: [
+    { date: "2026-10-12", type: "Żaba" }, { date: "2026-10-12", type: "Zebra" },
+  ] } }).events;
+  assert.deepEqual(nextBins(records, "pl").map(e => e.label), ["Zebra", "Żaba"]);
+  assert.deepEqual(nextBins(records, "en").map(e => e.label), ["Żaba", "Zebra"]);
+  const hass: HomeAssistant = { connection: {}, config: { time_zone: "UTC" }, language: "pl", callApi: async <T>() => [] as T,
+    states: { "sensor.waste": { ...entity, attributes: { upcoming: records.map(e => ({ date: e.date, type: e.label })) } } } };
+  assert.deepEqual(availableBins(hass, config).map(e => e.label), ["Zebra", "Żaba"]);
+  assert.deepEqual(availableBins(hass, { ...config, locale: "en" }).map(e => e.label), ["Żaba", "Zebra"]);
+  const aliased = projectEvents(events, { ...config, overrides: [{ type: "organic", label: "Small bio", name: "Zebra" },
+    { type: "organic", label: "Large bio", name: "Żaba" }] }, "2026-10-01", "2026-11-01");
+  assert.deepEqual([...aliased].sort(collectionOrder("pl")).map(e => e.label), ["Zebra", "Żaba"]);
+  assert.deepEqual([...aliased, { ...aliased[1], date: "2026-10-11" }].sort(collectionOrder("pl")).map(e => e.date), ["2026-10-11", "2026-10-12", "2026-10-12"]);
+  assert.equal(new Set(aliased.map(binKey)).size, 2);
+});
+
+test("duplicate selected source names retain IDs while unique or unselected names stay concise", () => {
+  const sources = ["sensor.waste", "calendar.other"];
+  const hass: HomeAssistant = { connection: {}, config: { time_zone: "UTC" }, callApi: async <T>() => [] as T, states: {
+    "sensor.waste": { ...entity, attributes: { friendly_name: "Garden" } },
+    "calendar.other": { entity_id: "calendar.other", state: "off", attributes: { friendly_name: " Garden " } },
+  } };
+  assert.equal(sourceName(hass, sources[0], sources), "Garden · sensor.waste");
+  assert.equal(sourceName(hass, sources[1], sources), "Garden · calendar.other");
+  assert.equal(sourceName(hass, sources[0], [sources[0]]), "Garden");
+  hass.states[sources[1]].attributes.friendly_name = "Second address";
+  assert.equal(sourceName(hass, sources[0], sources), "Garden");
+  assert.equal(sourceName(hass, sources[1], sources), "Second address");
+  assert.equal(sourceName(undefined, sources[0], sources), sources[0]);
 });
