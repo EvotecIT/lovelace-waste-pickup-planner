@@ -32,6 +32,8 @@ Download `waste-pickup-planner-card.js` from [Releases](https://github.com/Evote
 
 For [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule), select a sensor with **Generic** details. This exposes structured `upcoming` records. Its usual date-keyed details mode is intended for native entity displays and does not supply the structured records this card uses.
 
+Choose the combined sensor to display all bins for an address. In the integration's visual bin controls, Generic is labeled **All attributes**. The card editor suggests structured sensors and calendars; a saved sensor with another details format shows instructions for changing it.
+
 Alternatively, select a Home Assistant calendar:
 
 ```yaml
@@ -79,12 +81,28 @@ Both components have visual editors. Advanced YAML uses the same options:
 | `max_groups` | `5` | Visible date groups, 1–50; details show the full range |
 | `show_artwork` | `false` | Decorative bins in the hero |
 | `show_updated` | `false` | Display the sensor's provider-backed `last_update` attribute when present |
+| `show_manage_bins` | `false` | Card shortcut to the Waste Collection Schedule integration page |
 | `locale` | HA language | Optional language code such as `pl` or `en-GB` |
 | `overrides` | — | Exact collection names/IDs, display names, icons, colors, visibility |
 | `tap_action.action` | `details` | `details`, `more-info`, `navigate`, or `none` |
 | `tap_action.navigation_path` | — | Local dashboard path for `navigate` |
 
-`layout`, `max_groups`, and `show_artwork` do not change the badge presentation. `more-info` opens the first selected entity.
+`layout`, `max_groups`, `show_artwork`, and `show_manage_bins` do not change the badge presentation. `more-info` opens the first selected entity.
+
+### Visual bin colors
+
+In the card or badge editor, choose a named bin under **Bin appearance**, then pick a local color, change its display name, or hide it. **Use integration color** removes the local color override. Settings affect this card or badge; manage bin definitions and shared colors in Waste Collection Schedule. Enable **Show Manage bins shortcut** on a card to open that integration's native management page.
+
+![Visual bin controls and live card preview in Home Assistant](assets/bin-editor.jpg)
+
+<details>
+<summary>Bin controls on mobile</summary>
+
+![Visual bin controls on a narrow mobile viewport](assets/bin-editor-mobile.jpg)
+
+</details>
+
+Bins with different names remain separate when they share a canonical category and collection date. A visual override records the selected source entity and complete bin name. If you rename that bin in the integration, reselect it in the card editor. Calendar-only sources and bins absent from the current sensor schedule use **Advanced: add a category or calendar override**.
 
 ```yaml
 type: custom:waste-pickup-planner-card
@@ -101,6 +119,18 @@ overrides:
 ```
 
 `type` matches a v3 `type_id`, or the complete collection label when no ID exists. Names containing commas remain a single label. Colors must use `#RRGGBB`; icons must use `mdi:…`.
+
+Optional `source` and `label` restrict an override to one source and its exact bin name. For example, two bio bins can keep separate local colors:
+
+```yaml
+overrides:
+  - type: organic
+    source: sensor.waste_schedule
+    label: Small bio
+    color: '#123456'
+```
+
+Specific bin settings take precedence over broader category settings, per field. Within the same scope, the first matching override wins. A local card color takes precedence over the integration's effective color; removing it inherits the broader card override, if present, otherwise the integration color. The integration owns provider and shared category defaults.
 
 Bin artwork uses provider/customized color metadata or an explicit override. Category-default colors may color an icon, but never claim the color of your physical bin. Calendar-only sources have neutral bins unless you configure overrides.
 

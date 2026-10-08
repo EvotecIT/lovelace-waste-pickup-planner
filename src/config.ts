@@ -39,7 +39,7 @@ export function validateConfig(value: CardConfig): CardConfig {
     if (n !== undefined && (!Number.isInteger(n) || n < 1 || n > max))
       throw new Error(`${key} must be 1–${max}.`);
   }
-  for (const key of ["show_artwork", "show_updated"] as const)
+  for (const key of ["show_artwork", "show_updated", "show_manage_bins"] as const)
     if (value[key] !== undefined && typeof value[key] !== "boolean")
       throw new Error(`${key} must be true or false.`);
   if (value.title !== undefined && typeof value.title !== "string")
@@ -57,6 +57,8 @@ export function validateConfig(value: CardConfig): CardConfig {
         !item ||
         typeof item.type !== "string" ||
         !item.type.trim() ||
+        (item.source !== undefined && (typeof item.source !== "string" || !/^(sensor|calendar)\.[a-z0-9_]+$/.test(item.source))) ||
+        (item.label !== undefined && (typeof item.label !== "string" || !item.label.trim())) ||
         (item.name !== undefined && (typeof item.name !== "string" || !item.name.trim())) ||
         (item.hidden !== undefined && typeof item.hidden !== "boolean") ||
         (item.color !== undefined && !validColor(item.color)) ||

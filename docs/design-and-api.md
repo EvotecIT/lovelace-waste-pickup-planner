@@ -22,7 +22,9 @@ A present `upcoming` list is authoritative, including an empty list. Unsupported
 
 Malformed sensor records make that source unavailable rather than showing a falsely complete schedule. Record counts are bounded; complete labels are preserved and dates, colors and icons are validated. The adapter accepts only `#RRGGBB` colors and `mdi:…` icons. It ignores provider image URLs; optional bin illustrations are bundled inline SVG.
 
-Each explicitly selected entity is a separate source. Deduplication uses source + date + stable type ID, falling back to the complete label. No registry discovery is performed in this release. Users select one authoritative sensor/calendar per address; the editor explains this requirement. This preserves separate households with identical dates and labels.
+Each explicitly selected entity is a separate source. Deduplication uses source, date, category ID, complete provider label, and appearance metadata. A category ID alone does not identify a provider bin. Identical records deduplicate while differently named bins in one category remain separate. No registry discovery is performed. Users select one authoritative sensor/calendar per address; the editor suggests structured sensor states and calendars, retaining existing selections so unsupported saved sensors can be corrected.
+
+Overrides retain the existing category `type` matcher, with optional `source` and exact `label` constraints for bin-specific presentation. Matching uses the original collection identity before display aliases. More specific matches take precedence per field; the first match wins within a scope. The current upstream schema has no separate provider-bin identifier, so renaming a provider bin requires updating its label-scoped card override. Bin definitions and shared color customization remain integration responsibilities.
 
 ## Dates and lifecycle
 

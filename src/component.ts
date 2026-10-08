@@ -7,6 +7,7 @@ import { bins, chips, groupRows } from "./presentation.ts";
 import { strings, sourceMessage } from "./strings.ts";
 import { styles } from "./styles.ts";
 import { createEditor } from "./ha-editor.ts";
+import { suggestedSources } from "./collections.ts";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot } from "./types.ts";
 export class WastePickupPlannerCard extends LitElement {
   static styles = styles;
@@ -65,16 +66,11 @@ export class WastePickupPlannerCard extends LitElement {
     return createEditor("waste-pickup-planner-card-editor");
   }
   static getStubConfig(hass: HomeAssistant): CardConfig {
-    const sensor = Object.values(hass.states).find(
-      (e) =>
-        e.entity_id.startsWith("sensor.") &&
-        Array.isArray(e.attributes.upcoming),
-    );
+    const sources = suggestedSources(hass, { type: "" });
     return {
       type: "custom:waste-pickup-planner-card",
       entity:
-        sensor?.entity_id ??
-        Object.keys(hass.states).find((id) => id.startsWith("calendar.")) ??
+        sources.find(id => id.startsWith("sensor.")) ?? sources[0] ??
         "sensor.waste_schedule",
       layout: "compact",
     };
@@ -144,6 +140,10 @@ export class WastePickupPlannerCard extends LitElement {
       if (this.isConnected && this.detailsOpen)
         this.renderRoot.querySelector<HTMLDialogElement>("dialog")?.showModal();
     }
+  }
+  private manageBins(): void {
+    history.pushState(null, "", "/config/integrations/integration/waste_collection_schedule");
+    window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
   }
   private async changeDetailsPage(page: number): Promise<void> {
     this.detailsPage = page;
@@ -243,7 +243,8 @@ export class WastePickupPlannerCard extends LitElement {
           ${notice}${state === "unavailable" ? snapshot?.messages.map((m) => html`<p class="state">${sourceMessage(m, locale)}</p>`) : nothing}
           ${this.config.show_updated && snapshot?.fetchedAt ? html`<p class="updated">${t.updated}: ${updateLabel(snapshot.fetchedAt, locale, snapshot.timeZone)}</p>` : nothing}
         </section>
-        ${this.config.tap_action?.action === "none" ? nothing : html`<button class="action" @click=${this.activate}>${this.config.tap_action?.action === "more-info" ? title : t.details} <span aria-hidden="true">↗</span></button>`}</ha-card
+        ${this.config.tap_action?.action === "none" ? nothing : html`<button class="action" @click=${this.activate}>${this.config.tap_action?.action === "more-info" ? title : t.details} <span aria-hidden="true">↗</span></button>`}
+        ${this.config.show_manage_bins ? html`<button class="action" @click=${this.manageBins}>${t.manageBins} <span aria-hidden="true">⚙</span></button>` : nothing}</ha-card
       >${details}`;
   }
 }
