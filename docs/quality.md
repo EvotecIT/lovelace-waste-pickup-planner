@@ -201,3 +201,14 @@ hidden bins remain absent from the card. Arabic locale checks cover both pages
 of a 125-bin inventory and the schedule day numeral. The final session reported
 no browser errors. Type checking, 38 contract tests, and release packing pass;
 a bounded closure review found no remaining actionable issue in these paths.
+
+The Sections sizing resource with SHA-256
+`E9B871478F2900271E5D703D06D086D896BEE5C05C285181BDD0FCD97C820C35`
+was checked in native HA 2026.9.4 at 1270 × 720. Implicit and explicit compact
+cards occupy the same 459 px section width as hero, schedule, and overview cards.
+A saved six-column choice remains 225.5 px wide; the badge retains its measured
+147.74 × 51.72 px size. This preserves the established 12-column default while
+respecting user sizes. The final browser session reported no errors, and an
+owner-level sizing review found no remaining actionable issue in the affected
+Sections, Masonry sizing, or badge containment contracts. Final native replay
+covers Sections; existing Masonry size estimates are unchanged.
