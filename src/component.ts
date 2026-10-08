@@ -96,7 +96,7 @@ export class WastePickupPlannerCard extends LitElement {
         : 3;
   }
   getGridOptions(): object {
-    return { columns: this.config?.layout === "compact" ? 6 : 12, min_columns: 6, rows: "auto" };
+    return { columns: 12, min_columns: 6, rows: "auto" };
   }
   connectedCallback(): void {
     super.connectedCallback();
