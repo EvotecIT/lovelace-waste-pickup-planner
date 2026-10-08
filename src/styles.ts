@@ -2,7 +2,6 @@ import { css } from "lit";
 export const styles = css`
   :host {
     display: block;
-    container-type: inline-size;
     color: var(--primary-text-color, #212121);
     font-family: var(--ha-font-family, inherit);
   }
@@ -28,6 +27,7 @@ export const styles = css`
     outline-offset: -3px;
   }
   .surface {
+    container-type: inline-size;
     padding: 20px;
     position: relative;
   }

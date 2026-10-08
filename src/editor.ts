@@ -7,6 +7,7 @@ import { sourceIds, validateConfig } from "./config.ts";
 import { ScheduleController } from "./controller.ts";
 import { editorStrings, type EditorStrings } from "./editor-strings.ts";
 import { editorStyles } from "./editor-styles.ts";
+import { sourceName } from "./overview.ts";
 
 export class WastePickupPlannerEditor extends LitElement {
   static properties = { config: { state: true }, editing: { state: true }, calendarSnapshot: { state: true } };
@@ -138,7 +139,7 @@ export class WastePickupPlannerEditor extends LitElement {
       <div class="bin-list">${bins.map(bin => {
         const exact = overrides.findIndex(o => o.type === (bin.typeId ?? bin.label) && o.source === bin.sourceId && o.label === bin.label);
         const effective = collectionOverride(bin, overrides);
-        return html`<button class="bin-row" aria-label=${`${t.customize}: ${bin.label}`} aria-pressed=${exact >= 0 && this.editing === exact} ?disabled=${exact < 0 && overrides.length >= 100}
+        return html`<button class="bin-row" aria-label=${`${t.customize}: ${effective?.name ?? bin.label} · ${sourceName(this.ha, bin.sourceId)}`} aria-pressed=${exact >= 0 && this.editing === exact} ?disabled=${exact < 0 && overrides.length >= 100}
           @click=${() => {
             if (exact >= 0) this.editing = exact;
             else { this.changed({ overrides: [...overrides, { type: bin.typeId ?? bin.label, source: bin.sourceId, label: bin.label }] }); this.editing = overrides.length; }

@@ -159,7 +159,7 @@ establish upstream acceptance or installation of the released card through HACS.
 
 ## Overview and simplified editor
 
-The resource with SHA-256 `AAEBE1A6A233E57F5A8A5061B87FC2F394B24E4F6B72E108C7EEBED43DE9F0A3`
+The resource with SHA-256 `6612E16DBBC20F3A4C87D1D3A32D795B3AEF4783A2D7FCE7474770A80F5BB661`
 was exercised in an isolated Home Assistant 2026.9.4 instance with synthetic sensors
 and a calendar. Native checks covered English/light and Polish/dark interfaces,
 1270 × 720 and 1440 × 1000 desktop views, and 390 × 844 and 320 × 568 mobile views.
@@ -172,6 +172,8 @@ and a calendar. Native checks covered English/light and Polish/dark interfaces,
 - Only one bin editing panel opens at a time. Saved name and scope survive reopening.
 - Editing the title preserves implicit appearance defaults rather than saving unrelated fields.
 - Native, Modern, and Minimal cards render alongside the existing compact card and badge.
+- The badge retains native content sizing for long labels and unavailable sources.
+- Bin editing buttons announce the visible alias and source in English and Polish.
 
 [Native overview](../assets/overview-native-dark.png),
 [desktop editor](../assets/overview-editor.png), and
