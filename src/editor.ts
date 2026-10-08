@@ -95,7 +95,7 @@ export class WastePickupPlannerEditor extends LitElement {
         if (Object.keys(patch).length) this.changed(patch);
       }}></ha-form>`;
   }
-  private editPanel(t: EditorStrings, bins: ReturnType<typeof availableBins>, choices: ReturnType<typeof availableBins>, manualChoices: Parameters<typeof binName>[1]) {
+  private editPanel(t: EditorStrings, bins: ReturnType<typeof availableBins>, choices: ReturnType<typeof availableBins>, namingChoices: Parameters<typeof binName>[1]) {
     const index = this.editing;
     if (index === undefined || !this.config!.overrides?.[index]) return nothing;
     const o = this.config!.overrides[index];
@@ -106,7 +106,7 @@ export class WastePickupPlannerEditor extends LitElement {
     const colorStatus = inherited?.color ? `${t.inheritedColor}: ${inherited.color}` : integrationColors.size > 1 ? t.varyingColors : integrationColor ? `${t.integrationColor}: ${integrationColor}` : t.neutralColor;
     const choice = o.source && o.label ? choices.find(b => matchesCollection(b, o)) : undefined;
     const manual = { sourceId: o.source ?? "", typeId: o.type, originalLabel: o.label ?? o.type, label: o.name ?? o.label ?? o.type };
-    const name = choice ? binName(choice, choices) : binName(manual, manualChoices);
+    const name = binName(choice ?? manual, namingChoices);
     return html`<fieldset><legend>${name}${o.source ? html` · ${sourceName(this.ha, o.source, sourceIds(this.config!))}` : nothing}</legend>
       <label>${t.displayName}<input .value=${o.name ?? ""} placeholder=${inherited?.name ?? o.label ?? o.type}
         @input=${(e: Event) => this.override(index, { name: (e.target as HTMLInputElement).value || undefined })} /></label>
@@ -134,6 +134,7 @@ export class WastePickupPlannerEditor extends LitElement {
     const unsupported = sourceIds(this.config).filter(id => id.startsWith("sensor.") && this.ha!.states[id] && !sensorEvents(this.ha!.states[id]).supported);
     const unmatched = overrides.map((o, index) => ({ o, index })).filter(({ o }) => !bins.some(b => o.type === (b.typeId ?? b.label) && o.source === b.sourceId && o.label === b.label));
     const manualChoices = unmatched.map(({ o }) => ({ sourceId: o.source ?? "", typeId: o.type, originalLabel: o.label ?? o.type, label: o.name ?? o.label ?? o.type }));
+    const namingChoices = [...choices, ...manualChoices];
     return html`<h3>${t.source}</h3>${this.form(["entities", "title", "layout"], t)}<p>${t.sourceHelp}</p>
       ${unsupported.length ? html`<p class="warning" role="status">${unsupported.join(", ")}: ${t.unsupported}</p>` : nothing}
       ${!this.config.type.includes("badge") ? html`<h3>${t.appearanceSection}</h3>${this.form(["appearance", "density", "show_artwork", "show_source", "show_manage_bins"], t)}` : nothing}
@@ -142,17 +143,17 @@ export class WastePickupPlannerEditor extends LitElement {
       <div class="bin-list">${bins.map((bin, index) => {
         const exact = overrides.findIndex(o => o.type === (bin.typeId ?? bin.label) && o.source === bin.sourceId && o.label === bin.label);
         const effective = collectionOverride(bin, overrides);
-        const name = binName(choices[index], choices);
+        const name = binName(choices[index], namingChoices);
         return html`<button class="bin-row" aria-label=${`${t.customize}: ${name} · ${sourceName(this.ha, bin.sourceId, sources)}`} aria-pressed=${exact >= 0 && this.editing === exact} ?disabled=${exact < 0 && overrides.length >= 100}
           @click=${() => {
             if (exact >= 0) this.editing = exact;
             else { this.changed({ overrides: [...overrides, { type: bin.typeId ?? bin.label, source: bin.sourceId, label: bin.label }] }); this.editing = overrides.length; }
           }}><span class="swatch" aria-hidden="true" style=${styleMap({ "--waste-type-color": effective?.color ?? bin.color })}></span>
           <span class="bin-copy"><strong>${name}</strong><small>${sourceName(this.ha, bin.sourceId, sources)} · ${effective?.hidden ? t.hidden : effective?.hidden !== undefined || effective?.color || effective?.name || effective?.icon ? t.local : t.integration}</small></span><span aria-hidden="true">✎</span></button>
-          ${exact >= 0 && this.editing === exact ? this.editPanel(t, bins, choices, manualChoices) : nothing}`;
+          ${exact >= 0 && this.editing === exact ? this.editPanel(t, bins, choices, namingChoices) : nothing}`;
       })}${unmatched.map(({ o, index }, manualIndex) => html`<button class="bin-row" aria-pressed=${this.editing === index} @click=${() => { this.editing = index; }}>
-        <span class="bin-copy"><strong>${binName(manualChoices[manualIndex], manualChoices)}</strong><small>${o.source ? sourceName(this.ha, o.source, sources) : t.matching}</small></span><span aria-hidden="true">✎</span></button>
-        ${this.editing === index ? this.editPanel(t, bins, choices, manualChoices) : nothing}`)}</div>
+        <span class="bin-copy"><strong>${binName(manualChoices[manualIndex], namingChoices)}</strong><small>${o.source ? sourceName(this.ha, o.source, sources) : t.matching}</small></span><span aria-hidden="true">✎</span></button>
+        ${this.editing === index ? this.editPanel(t, bins, choices, namingChoices) : nothing}`)}</div>
       ${!bins.length ? html`<p>${t.noBins}</p>` : nothing}
       ${sourceIds(this.config).some(id => id.startsWith("calendar.")) ? html`<p>${t.rangeHelp}</p>
         ${!this.calendarSnapshot || this.calendarSnapshot.status === "loading" ? html`<p role="status">${t.calendarLoading}</p>` : this.calendarSnapshot.messages.some(m => m.source.startsWith("calendar.")) ? html`<p class="warning" role="status">${t.calendarFailed} <button @click=${this.refreshBins}>${t.retry}</button></p>` : nothing}` : nothing}
