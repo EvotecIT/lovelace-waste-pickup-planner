@@ -1,4 +1,5 @@
 import type { CardConfig, CollectionEvent, DateGroup } from "./types.ts";
+import { binKey, collectionOverride } from "./collections.ts";
 export function projectEvents(
   events: CollectionEvent[],
   config: CardConfig,
@@ -8,14 +9,14 @@ export function projectEvents(
   const unique = new Map<string, CollectionEvent>();
   for (const event of events) {
     if (event.date < start || event.date >= end) continue;
-    const override = config.overrides?.find(
-      (o) => o.type === (event.typeId ?? event.label),
-    );
+    const override = collectionOverride(event, config.overrides);
     if (override?.hidden) continue;
     const key = JSON.stringify([
-      event.sourceId,
+      binKey(event),
       event.date,
-      event.typeId ?? event.label,
+      event.color,
+      event.colorSource,
+      event.icon,
     ]);
     if (!unique.has(key))
       unique.set(key, {

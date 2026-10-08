@@ -24,6 +24,8 @@ export interface CollectionEvent {
 }
 export interface TypeOverride {
   type: string;
+  source?: string;
+  label?: string;
   name?: string;
   color?: string;
   icon?: string;
@@ -39,6 +41,7 @@ export interface CardConfig {
   max_groups?: number;
   show_artwork?: boolean;
   show_updated?: boolean;
+  show_manage_bins?: boolean;
   locale?: string;
   overrides?: TypeOverride[];
   tap_action?: {
