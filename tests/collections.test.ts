@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { availableBins, suggestedSources } from "../src/collections.ts";
+import { availableBins, overrideInheritance, suggestedSources } from "../src/collections.ts";
 import { sensorEvents } from "../src/adapters.ts";
 import { validateConfig } from "../src/config.ts";
 import { projectEvents } from "../src/schedule.ts";
@@ -56,6 +56,28 @@ test("editor discovers complete bin names and suggests structured sources withou
   assert.deepEqual(availableBins(hass, config).map(e => e.label), ["Large bio", "Small bio"]);
   assert.deepEqual(suggestedSources(hass, config), ["sensor.waste", "sensor.empty", "calendar.waste"]);
   assert.ok(suggestedSources(hass, { ...config, entity: "sensor.temperature" }).includes("sensor.temperature"));
+});
+
+test("bin controls inherit broader settings and can reveal a category-hidden bin", () => {
+  const category = { type: "organic", hidden: true, name: "Bio", color: "#111111" };
+  const bin = { type: "organic", source: "sensor.waste", label: "Small bio" };
+  assert.equal(overrideInheritance(bin, [category, bin])?.hidden, true);
+  assert.equal(overrideInheritance(bin, [category, bin])?.name, "Bio");
+  const visible = project({ ...config, overrides: [category, { ...bin, hidden: false }] });
+  assert.equal(visible.length, 1);
+  assert.equal(visible[0].color, "#111111");
+});
+
+test("category reset never inherits a child bin's color or a different source's settings", () => {
+  const category = { type: "organic", color: "#111111" };
+  const child = { type: "organic", source: "sensor.waste", label: "Large bio", color: "#222222" };
+  assert.equal(overrideInheritance(category, [category, child]), undefined);
+  const reset = project({ ...config, overrides: [{ ...category, color: undefined }, child] });
+  assert.equal(reset.find(e => e.label === "Large bio")?.color, "#222222");
+  assert.equal(reset.find(e => e.label === "Small bio")?.color, "#123456");
+  assert.equal(overrideInheritance({ type: "organic", label: "Small bio" }, [
+    { type: "organic", source: "sensor.other", color: "#333333" },
+  ]), undefined);
 });
 
 test("new override scope and management settings reject invalid configuration", () => {

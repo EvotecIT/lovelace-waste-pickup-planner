@@ -6,11 +6,14 @@ import type { CardConfig, CollectionEvent, HomeAssistant, TypeOverride } from ".
 export const binKey = (event: CollectionEvent): string =>
   JSON.stringify([event.sourceId, event.typeId ?? event.label, event.label]);
 
-export function collectionOverride(event: CollectionEvent, overrides: TypeOverride[] = []): TypeOverride | undefined {
-  const matches = overrides.filter(o => o.type === (event.typeId ?? event.label) &&
-    (o.source === undefined || o.source === event.sourceId) &&
-    (o.label === undefined || o.label === event.label));
-  const specificity = (o: TypeOverride) => Number(o.source !== undefined) + Number(o.label !== undefined) * 2;
+export const matchesCollection = (event: CollectionEvent, override: TypeOverride): boolean =>
+  override.type === (event.typeId ?? event.label) &&
+  (override.source === undefined || override.source === event.sourceId) &&
+  (override.label === undefined || override.label === event.label);
+
+const specificity = (override: TypeOverride) => Number(override.source !== undefined) + Number(override.label !== undefined) * 2;
+
+function mergeOverrides(matches: TypeOverride[]): TypeOverride | undefined {
   // Specific settings win per field; preserve the first matching override at each scope.
   const scopes = new Map<number, TypeOverride>();
   for (const override of matches) {
@@ -19,6 +22,18 @@ export function collectionOverride(event: CollectionEvent, overrides: TypeOverri
   return matches.length ? [...scopes.entries()]
     .sort(([a], [b]) => a - b)
     .reduce((result, [, o]) => ({ ...result, ...Object.fromEntries(Object.entries(o).filter(([, value]) => value !== undefined)) }), {} as TypeOverride) : undefined;
+}
+
+export function collectionOverride(event: CollectionEvent, overrides: TypeOverride[] = []): TypeOverride | undefined {
+  return mergeOverrides(overrides.filter(o => matchesCollection(event, o)));
+}
+
+/** An editor row inherits only scopes that apply to every collection it matches. */
+export function overrideInheritance(override: TypeOverride, overrides: TypeOverride[] = []): TypeOverride | undefined {
+  return mergeOverrides(overrides.filter(o => o.type === override.type &&
+    specificity(o) < specificity(override) &&
+    (o.source === undefined || o.source === override.source) &&
+    (o.label === undefined || o.label === override.label)));
 }
 
 export function suggestedSources(hass: HomeAssistant, config: CardConfig): string[] {

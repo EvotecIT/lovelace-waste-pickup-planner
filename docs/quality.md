@@ -130,18 +130,27 @@ other browser engines, editor changes, or an upgrade from a published release.
 
 ## Native Home Assistant bin controls
 
-The resource with SHA-256 `A07542164A7DCDE8715D048AD7E277DA3EE300B575B5D1DF628B6435582F1621`
+The resource with SHA-256 `D83ECFE81E273BE1B1068C4ABD8942B5D5A4EB6A4D2B864BB7613DA1F7E2AB9F`
 was exercised in an isolated Home Assistant 2026.9.4 instance with synthetic data.
 The checks covered the actual visual editor and card, at a 1270 × 720 desktop
 viewport and a 390 × 844 mobile viewport, with light and dark host themes.
 
 - Two differently named bins sharing one category and collection date remain visible.
 - Selecting one named bin creates an override scoped to its source and original name.
+- Adding the first bin resets the picker, allowing the next bin to be selected directly.
 - Color and display-name changes update the preview; hiding one bin leaves the other visible.
 - Resetting the local color restores integration color without removing the display name.
+- Per-bin visibility reflects inherited category settings; a local choice can reveal a hidden bin.
+- Category color reset preserves each bin's integration fallback and reports differing colors.
 - The source selector offers structured sensors and calendars, excluding ordinary date-keyed sensors.
 - The Manage bins action opens the native Waste Collection Schedule integration page.
 - Changing a shared bin color in the integration prototype updates the combined sensor and card.
+- The badge uses the same bin controls and removes hidden collections from its preview.
+
+The final remediation was checked in the dark desktop/mobile editor, and the
+browser reported no errors or warnings during those interactions. Light-theme
+checks preceded the inheritance/picker fixes; the final three screenshots below
+show the corrected bundle in the dark theme.
 
 [Desktop editor](../assets/bin-editor.jpg), [mobile editor](../assets/bin-editor-mobile.jpg),
 and [dark overview](../assets/bin-overview-dark.jpg) show those synthetic states.

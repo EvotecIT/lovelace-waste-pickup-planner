@@ -1,6 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
 import type { CardConfig, HomeAssistant, TypeOverride } from "./types.ts";
-import { availableBins, binKey, collectionOverride, suggestedSources } from "./collections.ts";
+import { availableBins, binKey, matchesCollection, overrideInheritance, suggestedSources } from "./collections.ts";
 import { sensorEvents } from "./adapters.ts";
 import { sourceIds } from "./config.ts";
 const schema = [
@@ -153,19 +153,24 @@ export class WastePickupPlannerEditor extends LitElement {
       <h3>Bin appearance</h3>
       <p>Colors follow the integration until you choose a local override. Bin definitions stay in Waste Collection Schedule.</p>
       ${selectableBins.length ? html`<label>Customize a bin<select .value=${""} @change=${(e: Event) => {
-        const bin = selectableBins.find(b => binKey(b) === (e.target as HTMLSelectElement).value);
+        const select = e.target as HTMLSelectElement;
+        const bin = selectableBins.find(b => binKey(b) === select.value);
+        select.value = "";
         if (bin) this.changed({ overrides: [...(this.config!.overrides ?? []), { type: bin.typeId ?? bin.label, source: bin.sourceId, label: bin.label }] });
       }}><option value="">Choose a bin…</option>${selectableBins.map(b => html`<option value=${binKey(b)}>${b.label} · ${this.hass!.states[b.sourceId]?.attributes.friendly_name ?? b.sourceId}</option>`)}</select></label>` : nothing}
       ${!bins.length ? html`<p>Bin choices appear when a selected sensor exposes collections. Calendar names or bins outside the sensor's current schedule can be configured in Advanced.</p>` : nothing}
       ${(this.config.overrides ?? []).map((o, index) => {
-        const bin = bins.find(b => o.type === (b.typeId ?? b.label) && (o.source === undefined || o.source === b.sourceId) && (o.label === undefined || o.label === b.label));
-        const inherited = bin ? collectionOverride(bin, this.config!.overrides!.filter((_, i) => i !== index))?.color : undefined;
+        const matchingBins = bins.filter(b => matchesCollection(b, o));
+        const inherited = overrideInheritance(o, this.config!.overrides);
+        const integrationColors = new Set(matchingBins.map(b => b.color));
+        const integrationColor = integrationColors.size === 1 ? matchingBins[0]?.color : undefined;
+        const colorStatus = inherited?.color ? `Inherited card color: ${inherited.color}` : integrationColors.size > 1 ? "Integration colors vary by bin." : integrationColor ? `Integration color: ${integrationColor}` : "No integration color is available; artwork stays neutral.";
         return html`<fieldset><legend>${o.label ?? o.type}${o.source ? html` · ${this.hass!.states[o.source]?.attributes.friendly_name ?? o.source}` : nothing}</legend>
-          <label>Display name<input .value=${o.name ?? ""} placeholder=${o.label ?? o.type} @input=${(e: Event) => this.override(index, { name: (e.target as HTMLInputElement).value || undefined })} /></label>
-          <label>Local bin color<input type="color" .value=${o.color ?? inherited ?? bin?.color ?? "#808080"} @input=${(e: Event) => this.override(index, { color: (e.target as HTMLInputElement).value })} /></label>
-          <p>${o.color ? `Local color: ${o.color}` : inherited ? `Inherited card color: ${inherited}` : bin?.color ? `Integration color: ${bin.color}` : "No integration color is available; artwork stays neutral."}</p>
-          ${o.color ? html`<button @click=${() => this.override(index, { color: undefined })}>${inherited ? "Use inherited card color" : "Use integration color"}</button>` : nothing}
-          <label class="check"><input type="checkbox" .checked=${o.hidden ?? false} @change=${(e: Event) => this.override(index, { hidden: (e.target as HTMLInputElement).checked })} /> Hide this collection</label>
+          <label>Display name<input .value=${o.name ?? ""} placeholder=${inherited?.name ?? o.label ?? o.type} @input=${(e: Event) => this.override(index, { name: (e.target as HTMLInputElement).value || undefined })} /></label>
+          <label>Local bin color<input type="color" .value=${o.color ?? inherited?.color ?? integrationColor ?? "#808080"} @input=${(e: Event) => this.override(index, { color: (e.target as HTMLInputElement).value })} /></label>
+          <p>${o.color ? `Local color: ${o.color}` : colorStatus}</p>
+          ${o.color ? html`<button @click=${() => this.override(index, { color: undefined })}>${inherited?.color ? "Use inherited card color" : "Use integration color"}</button>` : nothing}
+          <label class="check"><input type="checkbox" .checked=${o.hidden ?? inherited?.hidden ?? false} @change=${(e: Event) => this.override(index, { hidden: (e.target as HTMLInputElement).checked })} /> Hide this collection</label>
           <details><summary>Advanced matching and icon</summary>
             ${([["type", "Category ID or exact calendar name"], ["source", "Source entity (optional)"], ["label", "Exact bin name (optional)"], ["icon", "Icon (mdi:…)"], ["color", "Local color (#RRGGBB)"]] as const).map(([key, label]) => html`<label>${label}<input .value=${o[key] ?? ""} @change=${(e: Event) => this.override(index, { [key]: (e.target as HTMLInputElement).value || undefined })} /></label>`)}
           </details>
