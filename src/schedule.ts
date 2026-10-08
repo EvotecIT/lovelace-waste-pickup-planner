@@ -1,5 +1,5 @@
 import type { CardConfig, CollectionEvent, DateGroup } from "./types.ts";
-import { binKey, collectionOverride } from "./collections.ts";
+import { binKey, collectionOrder, collectionOverride } from "./collections.ts";
 export function projectEvents(
   events: CollectionEvent[],
   config: CardConfig,
@@ -28,9 +28,7 @@ export function projectEvents(
         icon: override?.icon ?? event.icon,
       });
   }
-  return [...unique.values()].sort(
-    (a, b) => a.date.localeCompare(b.date) || a.label.localeCompare(b.label),
-  );
+  return [...unique.values()].sort(collectionOrder(config.locale));
 }
 export function groupEvents(events: CollectionEvent[]): DateGroup[] {
   const groups = new Map<string, CollectionEvent[]>();

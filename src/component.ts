@@ -7,7 +7,7 @@ import { bins, chips, groupRows } from "./presentation.ts";
 import { strings, sourceMessage } from "./strings.ts";
 import { styles } from "./styles.ts";
 import { createEditor } from "./ha-editor.ts";
-import { binKey, sourceName, suggestedSources } from "./collections.ts";
+import { binKey, collectionOrder, sourceName, suggestedSources } from "./collections.ts";
 import { overview } from "./overview.ts";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot } from "./types.ts";
 export class WastePickupPlannerCard extends LitElement {
@@ -171,12 +171,14 @@ export class WastePickupPlannerCard extends LitElement {
     const locale = this.locale(),
       t = strings(locale),
       snapshot = this.snapshot;
-    const groups = groupEvents(snapshot?.events ?? []),
+    const events = [...(snapshot?.events ?? [])].sort(collectionOrder(locale));
+    const groups = groupEvents(events),
       next = groups[0],
       today = snapshot?.rangeStart ?? this.day ?? "2000-01-01";
     const selected = this.config.layout === "overview" && snapshot?.events.some(e => binKey(e) === this.selectedBin) ? this.selectedBin : undefined;
-    const detailEvents = selected ? snapshot!.events.filter(e => binKey(e) === selected) : snapshot?.events ?? [];
-    const showSource = this.config.show_source ?? sourceIds(this.config).length > 1;
+    const detailEvents = selected ? events.filter(e => binKey(e) === selected) : events;
+    const sources = sourceIds(this.config);
+    const showSource = this.config.show_source ?? sources.length > 1;
     const title = this.config.title ?? t.title;
     const state = snapshot?.status ?? "loading";
     const message =
@@ -241,8 +243,8 @@ export class WastePickupPlannerCard extends LitElement {
           ${
             next
               ? this.config.layout === "overview"
-                ? overview({ events: snapshot!.events, groups, today, locale, artwork: this.config.show_artwork ?? true,
-                    showSource, hass: this.ha, maxGroups: this.config.max_groups!, selected, page: this.binPage,
+                ? overview({ events, groups, today, locale, artwork: this.config.show_artwork ?? true,
+                    showSource, sources, hass: this.ha, maxGroups: this.config.max_groups!, selected, page: this.binPage,
                     select: key => { this.selectedBin = key; this.detailsPage = 0; }, changePage: page => { this.binPage = page; } })
                 : this.config.layout === "schedule"
                 ? groupRows(
@@ -268,7 +270,7 @@ export class WastePickupPlannerCard extends LitElement {
           ${this.config.layout === "overview" ? html`<div class=${`source-status ${state}`} role="status">
             <ha-icon aria-hidden="true" .icon=${state === "ready" ? "mdi:check-circle-outline" : state === "stale" || state === "unavailable" ? "mdi:alert-circle-outline" : "mdi:calendar-outline"}></ha-icon>
             <span>${state === "ready" ? t.ready : state === "stale" ? t.staleBadge : message}</span>
-          </div><div class="source-links" aria-label=${t.sources}>${sourceIds(this.config).map(id => html`<button @click=${() => this.sourceDetails(id)}>${sourceName(this.ha, id)} <span aria-hidden="true">↗</span></button>`)}</div>` : nothing}
+          </div><div class="source-links" aria-label=${t.sources}>${sources.map(id => html`<button @click=${() => this.sourceDetails(id)}>${sourceName(this.ha, id, sources)} <span aria-hidden="true">↗</span></button>`)}</div>` : nothing}
         </section>
         ${this.config.tap_action?.action === "none" ? nothing : html`<button class="action" @click=${this.activate}>${this.config.tap_action?.action === "more-info" ? title : t.details} <span aria-hidden="true">↗</span></button>`}
         ${this.config.show_manage_bins ? html`<button class="action" @click=${this.manageBins}>${t.manageBins} <span aria-hidden="true">⚙</span></button>` : nothing}</ha-card

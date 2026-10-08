@@ -2,9 +2,27 @@ import { sensorEvents } from "./adapters.ts";
 import { sourceIds } from "./config.ts";
 import type { CardConfig, CollectionEvent, HomeAssistant, TypeOverride } from "./types.ts";
 
-export function sourceName(hass: HomeAssistant | undefined, id: string): string {
-  const name = hass?.states[id]?.attributes.friendly_name;
-  return typeof name === "string" && name.trim() ? name : id;
+/** Keep selected sources distinguishable even when their display names coincide. */
+export function sourceName(hass: HomeAssistant | undefined, id: string, selected: string[] = [id]): string {
+  const label = (source: string) => {
+    const name = hass?.states[source]?.attributes.friendly_name;
+    return typeof name === "string" && name.trim() ? name.trim() : source;
+  };
+  const name = label(id);
+  return selected.some(other => other !== id && label(other) === name) ? `${name} · ${id}` : name;
+}
+
+/** Display ordering is locale-aware; dates and source IDs retain deterministic ties. */
+function labelOrder(locale: string): (a: CollectionEvent, b: CollectionEvent) => number {
+  let collator: Intl.Collator;
+  try { collator = new Intl.Collator(locale); }
+  catch { collator = new Intl.Collator("en"); } // The editor can contain an incomplete locale value.
+  return (a, b) => collator.compare(a.label, b.label) || (a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : 0);
+}
+
+export function collectionOrder(locale = "en"): (a: CollectionEvent, b: CollectionEvent) => number {
+  const compare = labelOrder(locale);
+  return (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || compare(a, b);
 }
 
 /** The provider's complete name remains part of identity when categories are shared. */
@@ -65,15 +83,16 @@ export function availableBins(hass: HomeAssistant, config: CardConfig, calendarE
     if (event.sourceId.startsWith("calendar.") && selected.has(event.sourceId) && !bins.has(binKey(event)))
       bins.set(binKey(event), event);
   }
-  return [...bins.values()].sort((a, b) => a.label.localeCompare(b.label) || a.sourceId.localeCompare(b.sourceId));
+  // The editor inventory is alphabetical rather than ordered by next collection date.
+  return [...bins.values()].sort(labelOrder(config.locale || hass.locale?.language || hass.language || "en"));
 }
 
 /** One next occurrence per source/bin, with display aliases excluded from identity. */
-export function nextBins(events: CollectionEvent[]): CollectionEvent[] {
+export function nextBins(events: CollectionEvent[], locale = "en"): CollectionEvent[] {
   const next = new Map<string, CollectionEvent>();
   for (const event of events) {
     const previous = next.get(binKey(event));
     if (!previous || event.date < previous.date) next.set(binKey(event), event);
   }
-  return [...next.values()].sort((a, b) => a.date.localeCompare(b.date) || a.label.localeCompare(b.label) || a.sourceId.localeCompare(b.sourceId));
+  return [...next.values()].sort(collectionOrder(locale));
 }

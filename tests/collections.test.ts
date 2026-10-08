@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { availableBins, binKey, nextBins, overrideInheritance, suggestedSources } from "../src/collections.ts";
+import { availableBins, binKey, collectionOrder, nextBins, overrideInheritance, sourceName, suggestedSources } from "../src/collections.ts";
 import { sensorEvents } from "../src/adapters.ts";
 import { validateConfig } from "../src/config.ts";
 import { projectEvents } from "../src/schedule.ts";
@@ -115,4 +115,36 @@ test("appearance options accept supported values and preserve existing card defa
   assert.throws(() => validateConfig({ ...config, appearance: "glass" as never }));
   assert.throws(() => validateConfig({ ...config, density: "tiny" as never }));
   assert.throws(() => validateConfig({ ...config, show_source: "yes" as never }));
+});
+
+test("the selected locale orders equal-date bins, editor inventory, and aliased display records", () => {
+  const records = sensorEvents({ ...entity, attributes: { upcoming: [
+    { date: "2026-10-12", type: "Żaba" }, { date: "2026-10-12", type: "Zebra" },
+  ] } }).events;
+  assert.deepEqual(nextBins(records, "pl").map(e => e.label), ["Zebra", "Żaba"]);
+  assert.deepEqual(nextBins(records, "en").map(e => e.label), ["Żaba", "Zebra"]);
+  const hass: HomeAssistant = { connection: {}, config: { time_zone: "UTC" }, language: "pl", callApi: async <T>() => [] as T,
+    states: { "sensor.waste": { ...entity, attributes: { upcoming: records.map(e => ({ date: e.date, type: e.label })) } } } };
+  assert.deepEqual(availableBins(hass, config).map(e => e.label), ["Zebra", "Żaba"]);
+  assert.deepEqual(availableBins(hass, { ...config, locale: "en" }).map(e => e.label), ["Żaba", "Zebra"]);
+  const aliased = projectEvents(events, { ...config, overrides: [{ type: "organic", label: "Small bio", name: "Zebra" },
+    { type: "organic", label: "Large bio", name: "Żaba" }] }, "2026-10-01", "2026-11-01");
+  assert.deepEqual([...aliased].sort(collectionOrder("pl")).map(e => e.label), ["Zebra", "Żaba"]);
+  assert.deepEqual([...aliased, { ...aliased[1], date: "2026-10-11" }].sort(collectionOrder("pl")).map(e => e.date), ["2026-10-11", "2026-10-12", "2026-10-12"]);
+  assert.equal(new Set(aliased.map(binKey)).size, 2);
+});
+
+test("duplicate selected source names retain IDs while unique or unselected names stay concise", () => {
+  const sources = ["sensor.waste", "calendar.other"];
+  const hass: HomeAssistant = { connection: {}, config: { time_zone: "UTC" }, callApi: async <T>() => [] as T, states: {
+    "sensor.waste": { ...entity, attributes: { friendly_name: "Garden" } },
+    "calendar.other": { entity_id: "calendar.other", state: "off", attributes: { friendly_name: " Garden " } },
+  } };
+  assert.equal(sourceName(hass, sources[0], sources), "Garden · sensor.waste");
+  assert.equal(sourceName(hass, sources[1], sources), "Garden · calendar.other");
+  assert.equal(sourceName(hass, sources[0], [sources[0]]), "Garden");
+  hass.states[sources[1]].attributes.friendly_name = "Second address";
+  assert.equal(sourceName(hass, sources[0], sources), "Garden");
+  assert.equal(sourceName(hass, sources[1], sources), "Second address");
+  assert.equal(sourceName(undefined, sources[0], sources), sources[0]);
 });
