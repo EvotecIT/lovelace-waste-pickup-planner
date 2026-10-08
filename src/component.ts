@@ -7,8 +7,8 @@ import { bins, chips, groupRows } from "./presentation.ts";
 import { strings, sourceMessage } from "./strings.ts";
 import { styles } from "./styles.ts";
 import { createEditor } from "./ha-editor.ts";
-import { binKey, suggestedSources } from "./collections.ts";
-import { overview, sourceName } from "./overview.ts";
+import { binKey, sourceName, suggestedSources } from "./collections.ts";
+import { overview } from "./overview.ts";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot } from "./types.ts";
 export class WastePickupPlannerCard extends LitElement {
   static styles = styles;

@@ -1,16 +1,11 @@
 import { html, nothing } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
-import { binKey, nextBins } from "./collections.ts";
+import { binKey, nextBins, sourceName } from "./collections.ts";
 import { dateLabel } from "./dates.ts";
 import { artworkColor } from "./schedule.ts";
 import { bins, chips, groupRows } from "./presentation.ts";
 import { strings } from "./strings.ts";
 import type { CollectionEvent, DateGroup, HomeAssistant } from "./types.ts";
-
-export function sourceName(hass: HomeAssistant | undefined, id: string): string {
-  const name = hass?.states[id]?.attributes.friendly_name;
-  return typeof name === "string" && name.trim() ? name : id;
-}
 
 /** The overview uses projected records and stable bin identity; it owns no source parsing. */
 export function overview(options: {
@@ -41,7 +36,7 @@ export function overview(options: {
         <span class="tile-color" aria-hidden="true" style=${styleMap({ backgroundColor: artworkColor(bin) })}></span>
       </button>`)}</div>
     ${pages > 1 ? html`<nav class="pages" aria-label=${t.binPage}><button ?disabled=${page === 0} @click=${() => options.changePage(page - 1)}>${t.previousPage}</button>
-      <span aria-live="polite">${page + 1} / ${pages}</span><button ?disabled=${page + 1 === pages} @click=${() => options.changePage(page + 1)}>${t.nextPage}</button></nav>` : nothing}
+      <span aria-live="polite">${new Intl.NumberFormat(locale).format(page + 1)} / ${new Intl.NumberFormat(locale).format(pages)}</span><button ?disabled=${page + 1 === pages} @click=${() => options.changePage(page + 1)}>${t.nextPage}</button></nav>` : nothing}
     <div class="section-heading"><h3>${t.upcoming}</h3>${selected ? html`<button class="filter-reset" @click=${() => options.select(undefined)}>${t.clearFilter}</button>` : nothing}</div>
     ${selected ? html`<p class="filter-hint" role="status">${selected.label}${options.showSource ? html` · ${sourceName(options.hass, selected.sourceId)}` : nothing}</p>` : nothing}
     <div class="overview-schedule">${groupRows(filtered.slice(0, options.maxGroups), today, locale)}</div>`;

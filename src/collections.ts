@@ -2,6 +2,11 @@ import { sensorEvents } from "./adapters.ts";
 import { sourceIds } from "./config.ts";
 import type { CardConfig, CollectionEvent, HomeAssistant, TypeOverride } from "./types.ts";
 
+export function sourceName(hass: HomeAssistant | undefined, id: string): string {
+  const name = hass?.states[id]?.attributes.friendly_name;
+  return typeof name === "string" && name.trim() ? name : id;
+}
+
 /** The provider's complete name remains part of identity when categories are shared. */
 export const binKey = (event: CollectionEvent): string =>
   JSON.stringify([event.sourceId, event.typeId ?? event.originalLabel ?? event.label, event.originalLabel ?? event.label]);

@@ -1,13 +1,13 @@
 import { LitElement, html, nothing } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot, TypeOverride } from "./types.ts";
-import { availableBins, collectionOverride, matchesCollection, overrideInheritance, suggestedSources } from "./collections.ts";
+import { availableBins, collectionOverride, matchesCollection, overrideInheritance, sourceName, suggestedSources } from "./collections.ts";
 import { sensorEvents } from "./adapters.ts";
 import { sourceIds, validateConfig } from "./config.ts";
 import { ScheduleController } from "./controller.ts";
 import { editorStrings, type EditorStrings } from "./editor-strings.ts";
 import { editorStyles } from "./editor-styles.ts";
-import { sourceName } from "./overview.ts";
+import { changedSettings, editorData } from "./editor-settings.ts";
 
 export class WastePickupPlannerEditor extends LitElement {
   static properties = { config: { state: true }, editing: { state: true }, calendarSnapshot: { state: true } };
@@ -87,15 +87,12 @@ export class WastePickupPlannerEditor extends LitElement {
       { name: "locale", selector: { text: {} } },
     ].filter(s => names.includes(s.name) && (!badge || !["layout", "max_groups", "show_artwork", "show_manage_bins", "appearance", "density", "show_source"].includes(s.name)));
     if (!schema.length) return nothing;
-    const data = { ...this.config, entities: sourceIds(this.config!), layout: this.config!.layout ?? "compact",
-      appearance: this.config!.appearance ?? "native", density: this.config!.density ?? "comfortable",
-      show_artwork: this.config!.show_artwork ?? this.config!.layout === "overview", show_source: this.config!.show_source ?? sourceIds(this.config!).length > 1 };
+    const data = editorData(this.config!);
     return html`<ha-form .hass=${this.ha} .data=${data} .schema=${schema}
       .computeLabel=${(s: { name: string }) => t[s.name as keyof EditorStrings]}
       @value-changed=${(event: CustomEvent) => {
-        const patch = Object.fromEntries(schema.map(s => [s.name, event.detail.value[s.name]])) as Partial<CardConfig>;
-        if (names.includes("entities")) patch.entity = undefined;
-        this.changed(patch);
+        const patch = changedSettings(data, event.detail.value, schema.map(s => s.name));
+        if (Object.keys(patch).length) this.changed(patch);
       }}></ha-form>`;
   }
   private editPanel(t: EditorStrings, bins: ReturnType<typeof availableBins>) {
@@ -144,7 +141,7 @@ export class WastePickupPlannerEditor extends LitElement {
             if (exact >= 0) this.editing = exact;
             else { this.changed({ overrides: [...overrides, { type: bin.typeId ?? bin.label, source: bin.sourceId, label: bin.label }] }); this.editing = overrides.length; }
           }}><span class="swatch" aria-hidden="true" style=${styleMap({ "--waste-type-color": effective?.color ?? bin.color })}></span>
-          <span class="bin-copy"><strong>${effective?.name ?? bin.label}</strong><small>${this.ha!.states[bin.sourceId]?.attributes.friendly_name ?? bin.sourceId} · ${effective?.hidden ? t.hidden : effective?.color || effective?.name || effective?.icon ? t.local : t.integration}</small></span><span aria-hidden="true">✎</span></button>
+          <span class="bin-copy"><strong>${effective?.name ?? bin.label}</strong><small>${sourceName(this.ha, bin.sourceId)} · ${effective?.hidden ? t.hidden : effective?.hidden !== undefined || effective?.color || effective?.name || effective?.icon ? t.local : t.integration}</small></span><span aria-hidden="true">✎</span></button>
           ${exact >= 0 && this.editing === exact ? this.editPanel(t, bins) : nothing}`;
       })}${unmatched.map(({ o, index }) => html`<button class="bin-row" aria-pressed=${this.editing === index} @click=${() => { this.editing = index; }}>
         <span class="bin-copy"><strong>${o.name ?? o.label ?? o.type}</strong><small>${o.source ? this.ha!.states[o.source]?.attributes.friendly_name ?? o.source : t.matching}</small></span><span aria-hidden="true">✎</span></button>
