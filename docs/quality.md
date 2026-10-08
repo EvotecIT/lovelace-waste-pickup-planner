@@ -212,3 +212,23 @@ respecting user sizes. The final browser session reported no errors, and an
 owner-level sizing review found no remaining actionable issue in the affected
 Sections, Masonry sizing, or badge containment contracts. Final native replay
 covers Sections; existing Masonry size estimates are unchanged.
+
+The collection display resource with SHA-256
+`42D64C527198F1D020A460652A3A61DFC8695A20C59E20B18AD71877B0D5471D`
+was checked in native HA 2026.9.4 at 1270 × 720 and 320 × 568. Category aliases
+that make individual choices collide retain the original bin name: Bio · Small bio
+and Bio · Large bio remain separate filters and editor controls. Hiding Small bio
+saves its original label and selected source; the other bin remains visible.
+Duplicate source names also include the selected entity ID, with narrow labels
+wrapping inside the controls. A source-specific filter and native entity details
+target the original entity. A single selected source retains its concise name.
+
+The preceding locale resource, SHA-256
+`9493BDB99A58EA6F96C05FD1C063C183C357A5F6761092D106534863CCCAAC9D`,
+was checked at 1270 × 720, 390 × 844, and 320 × 568. Polish orders Zebra before
+Żaba; English orders Żaba before Zebra. Overview, editor, and schedule-dialog
+ordering follow the active locale. Source labels, filtering, and identity paths
+received an owner-level review, followed by targeted confirmation of the alias
+correction. Type checking, 41 contract tests, and release packing pass. These
+native sessions logged opaque HA frontend objects without actionable stacks;
+they do not establish an error-free session.
