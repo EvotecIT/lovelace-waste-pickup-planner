@@ -25,6 +25,26 @@ test("category aliases preserve distinct original names in individual bin choice
   assert.equal(binName(projected[0], [projected[0], otherSource]), "Bio");
 });
 
+test("same provider labels distinguish type IDs before and after aliases or missing records", () => {
+  const raw = sensorEvents({ ...entity, attributes: { upcoming: [
+    { date: "2026-10-12", type: "Bio", type_id: "food", color: "#111111" },
+    { date: "2026-10-12", type: "Bio", type_id: "garden", color: "#111111" },
+  ] } }).events;
+  const check = (choices: typeof raw) => assert.deepEqual(choices.map(e => binName(e, choices)), ["Bio · food", "Bio · garden"]);
+  check(raw);
+  const projected = projectEvents(raw, config, "2026-10-01", "2026-11-01");
+  check(projected);
+  const aliases = projected.map(e => ({ ...e, label: "Organic" }));
+  assert.deepEqual(aliases.map(e => binName(e, aliases)), ["Organic · food", "Organic · garden"]);
+  const saved = raw.map(e => ({ sourceId: e.sourceId, typeId: e.typeId, originalLabel: e.label, label: e.label }));
+  assert.deepEqual(saved.map(e => binName(e, saved)), ["Bio · food", "Bio · garden"]);
+  assert.equal(binName(raw[0], [raw[0], { ...raw[0], date: "2026-10-20" }]), "Bio");
+  const legacy = { ...raw[0], typeId: undefined };
+  assert.equal(binName(legacy, [legacy, raw[0]]), "Bio");
+  assert.equal(binName(raw[0], [legacy, raw[0]]), "Bio · food");
+  assert.deepEqual(raw.map(binKey), projected.map(binKey));
+});
+
 test("distinct provider bins in one category survive while repeated records deduplicate", () => {
   assert.deepEqual(project().map(e => [e.label, e.color]), [["Large bio", "#FF00FF"], ["Small bio", "#123456"]]);
 });

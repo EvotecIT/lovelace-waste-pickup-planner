@@ -25,15 +25,21 @@ export function collectionOrder(locale = "en"): (a: CollectionEvent, b: Collecti
   return (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || compare(a, b);
 }
 
+type BinChoice = Pick<CollectionEvent, "sourceId" | "typeId" | "originalLabel" | "label">;
+
 /** The provider's complete name remains part of identity when categories are shared. */
-export const binKey = (event: CollectionEvent): string =>
+export const binKey = (event: BinChoice): string =>
   JSON.stringify([event.sourceId, event.typeId ?? event.originalLabel ?? event.label, event.originalLabel ?? event.label]);
 
-/** Category aliases keep their original names where individual choices would collide. */
-export function binName(event: CollectionEvent, choices: CollectionEvent[]): string {
-  return event.originalLabel && event.originalLabel !== event.label && choices.some(other =>
-    other.sourceId === event.sourceId && other.label === event.label && binKey(other) !== binKey(event))
-    ? `${event.label} · ${event.originalLabel}` : event.label;
+/** Distinct choices keep a provider name or type ID when their displayed names collide. */
+export function binName(event: BinChoice, choices: BinChoice[]): string {
+  const collisions = choices.filter(other => other.sourceId === event.sourceId &&
+    other.label === event.label && binKey(other) !== binKey(event));
+  if (!collisions.length) return event.label;
+  const original = event.originalLabel ?? event.label;
+  const sameOriginal = collisions.some(other => (other.originalLabel ?? other.label) === original);
+  const suffix = sameOriginal ? event.typeId ?? original : original;
+  return suffix === event.label ? event.label : `${event.label} · ${suffix}`;
 }
 
 export const matchesCollection = (event: CollectionEvent, override: TypeOverride): boolean =>
