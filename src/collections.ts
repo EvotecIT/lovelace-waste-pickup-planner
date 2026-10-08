@@ -29,6 +29,13 @@ export function collectionOrder(locale = "en"): (a: CollectionEvent, b: Collecti
 export const binKey = (event: CollectionEvent): string =>
   JSON.stringify([event.sourceId, event.typeId ?? event.originalLabel ?? event.label, event.originalLabel ?? event.label]);
 
+/** Category aliases keep their original names where individual choices would collide. */
+export function binName(event: CollectionEvent, choices: CollectionEvent[]): string {
+  return event.originalLabel && event.originalLabel !== event.label && choices.some(other =>
+    other.sourceId === event.sourceId && other.label === event.label && binKey(other) !== binKey(event))
+    ? `${event.label} · ${event.originalLabel}` : event.label;
+}
+
 export const matchesCollection = (event: CollectionEvent, override: TypeOverride): boolean =>
   override.type === (event.typeId ?? event.originalLabel ?? event.label) &&
   (override.source === undefined || override.source === event.sourceId) &&

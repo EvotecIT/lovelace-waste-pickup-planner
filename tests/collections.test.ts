@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { availableBins, binKey, collectionOrder, nextBins, overrideInheritance, sourceName, suggestedSources } from "../src/collections.ts";
+import { availableBins, binKey, binName, collectionOrder, nextBins, overrideInheritance, sourceName, suggestedSources } from "../src/collections.ts";
 import { sensorEvents } from "../src/adapters.ts";
 import { validateConfig } from "../src/config.ts";
 import { projectEvents } from "../src/schedule.ts";
@@ -15,6 +15,15 @@ const entity = { entity_id: "sensor.waste", state: "ready", attributes: { upcomi
 const events = sensorEvents(entity).events;
 const project = (overrides = config as typeof config & { overrides?: import("../src/types.ts").TypeOverride[] }) =>
   projectEvents([...events, events[0]], overrides, "2026-10-01", "2026-11-01");
+
+test("category aliases preserve distinct original names in individual bin choices", () => {
+  const projected = project({ ...config, overrides: [{ type: "organic", name: "Bio", color: "#111111" }] });
+  assert.deepEqual(projected.map(event => binName(event, projected)).sort(), ["Bio · Large bio", "Bio · Small bio"]);
+  assert.deepEqual(projected.map(binKey).sort(), events.map(binKey).sort());
+  assert.equal(binName(projected[0], [projected[0], { ...projected[0], date: "2026-10-20" }]), "Bio");
+  const otherSource = { ...projected[1], sourceId: "sensor.other" };
+  assert.equal(binName(projected[0], [projected[0], otherSource]), "Bio");
+});
 
 test("distinct provider bins in one category survive while repeated records deduplicate", () => {
   assert.deepEqual(project().map(e => [e.label, e.color]), [["Large bio", "#FF00FF"], ["Small bio", "#123456"]]);

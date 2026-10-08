@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
-import { binKey, nextBins, sourceName } from "./collections.ts";
+import { binKey, binName, nextBins, sourceName } from "./collections.ts";
 import { dateLabel } from "./dates.ts";
 import { artworkColor } from "./schedule.ts";
 import { bins, chips, groupRows } from "./presentation.ts";
@@ -31,13 +31,13 @@ export function overview(options: {
       <button class="bin-tile" aria-pressed=${Boolean(selected && binKey(bin) === options.selected)}
         @click=${() => options.select(binKey(bin) === options.selected ? undefined : binKey(bin))}>
         ${options.artwork ? bins([bin]) : html`<ha-icon aria-hidden="true" .icon=${bin.icon ?? "mdi:trash-can-outline"} style=${styleMap({ color: bin.color })}></ha-icon>`}
-        <span class="tile-copy"><strong>${bin.label}</strong>${options.showSource ? html`<small class="source-name">${sourceName(options.hass, bin.sourceId, options.sources)}</small>` : nothing}
+        <span class="tile-copy"><strong>${binName(bin, inventory)}</strong>${options.showSource ? html`<small class="source-name">${sourceName(options.hass, bin.sourceId, options.sources)}</small>` : nothing}
           <span class="tile-date">${dateLabel(bin.date, today, locale)}</span></span>
         <span class="tile-color" aria-hidden="true" style=${styleMap({ backgroundColor: artworkColor(bin) })}></span>
       </button>`)}</div>
     ${pages > 1 ? html`<nav class="pages" aria-label=${t.binPage}><button ?disabled=${page === 0} @click=${() => options.changePage(page - 1)}>${t.previousPage}</button>
       <span aria-live="polite">${new Intl.NumberFormat(locale).format(page + 1)} / ${new Intl.NumberFormat(locale).format(pages)}</span><button ?disabled=${page + 1 === pages} @click=${() => options.changePage(page + 1)}>${t.nextPage}</button></nav>` : nothing}
     <div class="section-heading"><h3>${t.upcoming}</h3>${selected ? html`<button class="filter-reset" @click=${() => options.select(undefined)}>${t.clearFilter}</button>` : nothing}</div>
-    ${selected ? html`<p class="filter-hint" role="status">${selected.label}${options.showSource ? html` · ${sourceName(options.hass, selected.sourceId, options.sources)}` : nothing}</p>` : nothing}
+    ${selected ? html`<p class="filter-hint" role="status">${binName(selected, inventory)}${options.showSource ? html` · ${sourceName(options.hass, selected.sourceId, options.sources)}` : nothing}</p>` : nothing}
     <div class="overview-schedule">${groupRows(filtered.slice(0, options.maxGroups), today, locale)}</div>`;
 }
