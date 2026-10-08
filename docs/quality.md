@@ -232,3 +232,17 @@ received an owner-level review, followed by targeted confirmation of the alias
 correction. Type checking, 41 contract tests, and release packing pass. These
 native sessions logged opaque HA frontend objects without actionable stacks;
 they do not establish an error-free session.
+
+The bin-choice resource with SHA-256
+`D4CDE17534A70D7E8EC5BE51559B7EA78B52B0C383338AF777CFE06C6314BF82`
+was checked in native HA 2026.9.4 at 1270 × 720 and 320 × 568. Two supplied
+type IDs with the same provider label remain distinguishable as Bio · food and
+Bio · garden in overview filters and editing controls. Aliases retain those
+qualifiers. Current records and saved missing-bin overrides share one editor
+naming inventory, so partial schedule availability also preserves distinct
+choices and panel names. Hiding a missing garden bin retains its original type,
+source, and provider label in the saved configuration. An owner-level naming
+review and targeted confirmation found no remaining actionable issue in these
+paths. Type checking, 42 contract tests, and release packing pass. These native
+sessions include opaque HA frontend console objects without actionable stacks;
+they do not establish an error-free entire session.
