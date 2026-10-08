@@ -188,3 +188,16 @@ This is candidate-bundle proof, not a published release, a HACS installation,
 or a complete qualification of arbitrary themes, browser engines, heap retention,
 and assistive technology. The overview discovers bins in supplied records within
 the configured range; it does not establish a permanent physical-bin inventory.
+
+The editor remediation resource with SHA-256
+`71C7F467539B376DC9F758EAFBBE24BCD6E67FAE043100455B17842BCB252A8C`
+was checked in the same HA version with a fresh synthetic lab and dark desktop
+interface. Density edits save only the selected setting; switching to Overview
+retains automatic artwork. Appearance edits followed by removing a second source
+retain automatic source labels. An explicit artwork preference survives layout
+changes, and the saved overview preserves the legacy single-entity configuration.
+Category-hidden bins revealed by a local choice display Customized while other
+hidden bins remain absent from the card. Arabic locale checks cover both pages
+of a 125-bin inventory and the schedule day numeral. The final session reported
+no browser errors. Type checking, 38 contract tests, and release packing pass;
+a bounded closure review found no remaining actionable issue in these paths.
