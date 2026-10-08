@@ -98,7 +98,7 @@ function hass(state = "ready") {
     callApi: async () => [],
   };
 }
-for (const layout of ["hero", "compact", "schedule", "badge"]) {
+for (const layout of ["overview", "hero", "compact", "schedule", "badge"]) {
   const card = document.createElement(
     layout === "badge"
       ? "waste-pickup-planner-badge"
@@ -128,9 +128,20 @@ document.querySelector("#state").addEventListener("change", (e) => {
           card.parentElement.id === "badge" ? "compact" : card.parentElement.id,
         show_artwork: true,
         max_groups: 3,
+        appearance: document.querySelector("#appearance").value,
+        density: document.querySelector("#density").value,
       });
     card.hass = hass(e.target.value);
   }
+});
+for (const setting of ["appearance", "density"]) document.querySelector(`#${setting}`).addEventListener("change", () => {
+  for (const card of cards) card.setConfig({
+    type: card.localName, entity: "sensor.waste_schedule",
+    layout: card.parentElement.id === "badge" ? "compact" : card.parentElement.id,
+    show_artwork: true, max_groups: 3,
+    appearance: document.querySelector("#appearance").value,
+    density: document.querySelector("#density").value,
+  });
 });
 document.querySelector("#language").addEventListener("change", (e) => {
   for (const card of cards)

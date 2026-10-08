@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { availableBins, overrideInheritance, suggestedSources } from "../src/collections.ts";
+import { availableBins, binKey, nextBins, overrideInheritance, suggestedSources } from "../src/collections.ts";
 import { sensorEvents } from "../src/adapters.ts";
 import { validateConfig } from "../src/config.ts";
 import { projectEvents } from "../src/schedule.ts";
@@ -84,4 +84,35 @@ test("new override scope and management settings reject invalid configuration", 
   assert.throws(() => validateConfig({ ...config, overrides: [{ type: "organic", source: "https://example.com" }] }));
   assert.throws(() => validateConfig({ ...config, overrides: [{ type: "organic", label: " " }] }));
   assert.throws(() => validateConfig({ ...config, show_manage_bins: "true" as unknown as boolean }));
+});
+
+test("overview next dates preserve distinct bins and sources even after identical aliases", () => {
+  const projected = projectEvents([
+    ...events, { ...events[0], date: "2026-10-20" }, { ...events[0], sourceId: "sensor.other" },
+  ], { ...config, overrides: [{ type: "organic", name: "Bio" }] }, "2026-10-01", "2026-11-01");
+  const bins = nextBins(projected);
+  assert.equal(bins.length, 3);
+  assert.equal(new Set(bins.map(binKey)).size, 3);
+  assert.ok(bins.every(b => b.label === "Bio" && b.date === "2026-10-12"));
+  assert.equal(bins.find(b => b.originalLabel === "Small bio" && b.sourceId === "sensor.waste")?.color, "#123456");
+  assert.equal(projected.filter(e => binKey(e) === binKey(bins[0])).length, bins[0].originalLabel === "Small bio" && bins[0].sourceId === "sensor.waste" ? 2 : 1);
+});
+
+test("calendar choices use selected raw records so hidden bins remain editable", () => {
+  const hass: HomeAssistant = { connection: {}, config: { time_zone: "UTC" }, callApi: async <T>() => [] as T, states: { "sensor.waste": entity } };
+  const calendar = { sourceId: "calendar.waste", entityId: "calendar.waste", label: "Glass, bottles", date: "2026-10-12" };
+  const selected = { ...config, entity: undefined, entities: ["sensor.waste", "calendar.waste"], overrides: [{ type: calendar.label, hidden: true }] };
+  assert.equal(projectEvents([calendar], selected, "2026-10-01", "2026-11-01").length, 0);
+  assert.equal(availableBins(hass, selected, [calendar, calendar, { ...calendar, sourceId: "calendar.other" }]).length, 3);
+  assert.deepEqual(availableBins(hass, { ...config, entity: "calendar.waste" }, [calendar]), [calendar]);
+});
+
+test("appearance options accept supported values and preserve existing card defaults", () => {
+  assert.equal(validateConfig(config).layout, "compact");
+  assert.equal(validateConfig(config).appearance, undefined);
+  assert.equal(validateConfig(config).density, undefined);
+  assert.equal(validateConfig({ ...config, layout: "overview", appearance: "modern", density: "compact", show_source: true }).layout, "overview");
+  assert.throws(() => validateConfig({ ...config, appearance: "glass" as never }));
+  assert.throws(() => validateConfig({ ...config, density: "tiny" as never }));
+  assert.throws(() => validateConfig({ ...config, show_source: "yes" as never }));
 });

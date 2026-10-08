@@ -1,8 +1,8 @@
 # Waste Pickup Planner
 
-Waste collection dates for Home Assistant, grouped by day. Choose a compact card for your overview, a hero with optional bin illustrations, a schedule list, or a dashboard badge.
+Waste collection dates for Home Assistant, grouped by day. Choose a bin overview, a compact card, a hero with optional bin illustrations, a schedule list, or a dashboard badge.
 
-![Waste Pickup Planner layouts](assets/layouts-dark.png)
+![Waste Pickup Planner bin overview in Home Assistant](assets/overview-native-dark.png)
 
 The card reads Home Assistant sensors and calendars. It does not contact municipality services, need another account, or control physical devices.
 
@@ -58,6 +58,7 @@ max_groups: 4
 - **Compact** shows the next date, up to six collection names, and a count of any additional collections.
 - **Hero** adds optional bin artwork and upcoming date groups.
 - **Schedule** shows date-grouped rows.
+- **Overview** shows the next pickup, each supplied bin's next date, a filterable schedule, and source status. Select a bin to filter the upcoming list and schedule dialog; select it again or choose **Show all bins** to clear the filter. Bin lists longer than 12 entries have page controls.
 - **Badge** shows the next date and collection names or a count. Its accessible description includes up to six complete names; the default action opens all collections. Add it to a view's badges:
 
 ```yaml
@@ -66,6 +67,18 @@ entity: sensor.waste_schedule
 ```
 
 Visible date groups show up to six complete collection names and an overflow count. The default action opens the full schedule for the configured date range, in pages of 100 collections. The dialog supports keyboard navigation and Escape to close. English and Polish interface labels are included; dates follow Home Assistant's language and home timezone.
+
+For an overview with a tinted header and tighter spacing:
+
+```yaml
+type: custom:waste-pickup-planner-card
+entity: sensor.waste_schedule
+layout: overview
+appearance: modern
+density: compact
+```
+
+**Native Home Assistant**, **Modern**, and **Minimal** appearance presets use the active HA theme. Comfortable spacing is the default. These options change presentation; provider and local bin colors retain their existing meaning. The overview shows bins present in the supplied date range, rather than inferring a complete physical-bin inventory. Identical labels from different selected sources remain separate. Source names appear on tiles by default when multiple sources are selected.
 
 ## Configuration
 
@@ -76,10 +89,13 @@ Both components have visual editors. Advanced YAML uses the same options:
 | `entity` | Required unless `entities` is set | Sensor or calendar ID |
 | `entities` | — | Up to 12 explicit sources; do not also set `entity` |
 | `title` | Localized “Waste collection” | Card heading |
-| `layout` | `compact` | `compact`, `hero`, or `schedule` |
+| `layout` | `compact` | `compact`, `hero`, `schedule`, or `overview` |
+| `appearance` | `native` | `native`, `modern`, or `minimal`; card presentation |
+| `density` | `comfortable` | `comfortable` or `compact`; card spacing |
+| `show_source` | Multiple sources | Source names on overview bin tiles |
 | `days_to_show` | `30` | Range beginning today in the home timezone, 1–366 days |
 | `max_groups` | `5` | Visible date groups, 1–50; details show the full range |
-| `show_artwork` | `false` | Decorative bins in the hero |
+| `show_artwork` | `true` in overview; `false` otherwise | Decorative bins in hero and overview |
 | `show_updated` | `false` | Display the sensor's provider-backed `last_update` attribute when present |
 | `show_manage_bins` | `false` | Card shortcut to the Waste Collection Schedule integration page |
 | `locale` | HA language | Optional language code such as `pl` or `en-GB` |
@@ -87,22 +103,24 @@ Both components have visual editors. Advanced YAML uses the same options:
 | `tap_action.action` | `details` | `details`, `more-info`, `navigate`, or `none` |
 | `tap_action.navigation_path` | — | Local dashboard path for `navigate` |
 
-`layout`, `max_groups`, `show_artwork`, and `show_manage_bins` do not change the badge presentation. `more-info` opens the first selected entity.
+`layout`, `max_groups`, `show_artwork`, `show_manage_bins`, `appearance`, `density`, and `show_source` do not change the badge presentation. `more-info` opens the first selected entity. Overview source buttons open the corresponding entity's native details.
 
 ### Visual bin colors
 
-In the card or badge editor, choose a named bin under **Bin appearance**, then pick a local color, change its display name, or hide it. **Use integration color** removes the local color override. Settings affect this card or badge; manage bin definitions and shared colors in Waste Collection Schedule. Enable **Show Manage bins shortcut** on a card to open that integration's native management page.
+The visual editor starts with **Source and layout**, followed by **Appearance** and **Bins**. Select a bin to open its editing panel, then pick a local color, change its display name, or hide it. Only one panel opens at a time. **Use integration color** removes the local color override; **Reset this override** removes that bin's local settings. Category matching, icons, date-range settings and tap actions stay under **Advanced settings**. The editor follows HA's English or Polish language setting.
 
-![Visual bin controls and live card preview in Home Assistant](assets/bin-editor.jpg)
+Settings affect this card or badge; manage bin definitions and shared colors in Waste Collection Schedule. Enable **Show Manage bins shortcut** on a card to open that integration's native management page.
+
+![Visual bin controls and live card preview in Home Assistant](assets/overview-editor.png)
 
 <details>
 <summary>Bin controls on mobile</summary>
 
-![Visual bin controls on a narrow mobile viewport](assets/bin-editor-mobile.jpg)
+![Visual bin controls on a narrow mobile viewport](assets/overview-editor-mobile.png)
 
 </details>
 
-Bins with different names remain separate when they share a canonical category and collection date. A visual override records the selected source entity and complete bin name. If you rename that bin in the integration, reselect it in the card editor. Calendar-only sources and bins absent from the current sensor schedule use **Advanced: add a category or calendar override**.
+Bins with different names remain separate when they share a canonical category and collection date, including when local display names match. A visual override records the selected source entity and complete original bin name. If you rename that bin in the integration, reselect it in the card editor. Calendar bins also appear in the ordinary visual list after their events load; discovery uses the configured date range. For bins absent from the supplied records, use **Advanced settings → Add a category or missing bin override**.
 
 ```yaml
 type: custom:waste-pickup-planner-card

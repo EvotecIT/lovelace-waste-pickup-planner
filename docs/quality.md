@@ -72,7 +72,7 @@ badge in each relevant combination:
 - HA visual editors, dashboard sections, badge placement, more-info, and local
   navigation against the actual HA host.
 
-The preview's **125 collections** fixture exercises both dialog pages. The first
+The preview's **125 collections** fixture exercises bin pages and both dialog pages. The first
 page contains collections 001â€“100 and the second contains 101â€“125. Use the
 independent language selector to inspect each state in English and Polish.
 
@@ -156,3 +156,33 @@ show the corrected bundle in the dark theme.
 and [dark overview](../assets/bin-overview-dark.jpg) show those synthetic states.
 The integration controls were tested against its local v3 prototype; they do not
 establish upstream acceptance or installation of the released card through HACS.
+
+## Overview and simplified editor
+
+The resource with SHA-256 `AAEBE1A6A233E57F5A8A5061B87FC2F394B24E4F6B72E108C7EEBED43DE9F0A3`
+was exercised in an isolated Home Assistant 2026.9.4 instance with synthetic sensors
+and a calendar. Native checks covered English/light and Polish/dark interfaces,
+1270 × 720 and 1440 × 1000 desktop views, and 390 × 844 and 320 × 568 mobile views.
+
+- The bin overview preserves separate source/bin identities after display-name changes.
+- Selecting a bin filters the upcoming list and schedule dialog; Escape closes the dialog.
+- Identical labels from two addresses have source subtitles and independent filters.
+- Sensor and calendar bins appear in the ordinary editor. Hidden bins remain editable.
+- Local color reset restores source metadata; a calendar without a color stays neutral.
+- Only one bin editing panel opens at a time. Saved name and scope survive reopening.
+- Editing the title preserves implicit appearance defaults rather than saving unrelated fields.
+- Native, Modern, and Minimal cards render alongside the existing compact card and badge.
+
+[Native overview](../assets/overview-native-dark.png),
+[desktop editor](../assets/overview-editor.png), and
+[mobile editor](../assets/overview-editor-mobile.png) show the actual HA frontend.
+The standalone preview additionally covered 125-bin pagination, long labels,
+localized stale/unavailable states, and an 844 × 390 landscape viewport. A fresh
+native source-details smoke check and the final preview reported no browser errors.
+Two earlier native-editor console entries contained opaque HA objects, without
+an actionable stack trace; these are not evidence of an error-free entire session.
+
+This is candidate-bundle proof, not a published release, a HACS installation,
+or a complete qualification of arbitrary themes, browser engines, heap retention,
+and assistive technology. The overview discovers bins in supplied records within
+the configured range; it does not establish a permanent physical-bin inventory.

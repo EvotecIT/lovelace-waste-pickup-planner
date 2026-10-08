@@ -2,6 +2,7 @@ import { css } from "lit";
 export const styles = css`
   :host {
     display: block;
+    container-type: inline-size;
     color: var(--primary-text-color, #212121);
     font-family: var(--ha-font-family, inherit);
   }
@@ -263,6 +264,46 @@ export const styles = css`
     min-height: 44px;
     border-radius: 50%;
   }
+  ha-card[data-appearance="modern"] { border-radius: max(20px, var(--ha-card-border-radius, 16px)); }
+  ha-card[data-appearance="modern"] .overview-next {
+    padding: 18px;
+    border-radius: 16px;
+    background: linear-gradient(120deg, color-mix(in srgb, var(--primary-color, #03a9f4) 12%, transparent), color-mix(in srgb, var(--primary-color, #03a9f4) 3%, transparent));
+  }
+  ha-card[data-appearance="minimal"] .eyebrow { letter-spacing: 0; }
+  ha-card[data-appearance="minimal"] .day { flex-basis: 36px; }
+  ha-card[data-appearance="minimal"] .bin-tile { background: transparent; border-color: transparent; border-bottom-color: var(--divider-color, #ddd); border-radius: 0; }
+  ha-card[data-appearance="minimal"] .bin-tile[aria-pressed="true"] { border-color: var(--primary-color, #03a9f4); }
+  ha-card[data-density="compact"] .surface { padding: 14px; }
+  ha-card[data-density="compact"] .group { padding: 10px 0; gap: 10px; }
+  ha-card[data-density="compact"] .heading { margin-bottom: 12px; }
+  ha-card[data-density="compact"] .bin-tile { padding: 10px; }
+  ha-card[data-density="compact"] .section-heading { margin-top: 18px; }
+  .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 24px 0 8px; }
+  .section-heading h3 { font-size: 14px; font-weight: 600; margin: 0; }
+  .section-heading small, .filter-hint { color: var(--secondary-text-color, #727272); font-size: 12px; }
+  .filter-hint { margin: 0 0 12px; line-height: 1.5; overflow-wrap: anywhere; }
+  .bin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .bin-tile { position: relative; display: flex; align-items: center; gap: 10px; padding: 14px; min-height: 96px; width: 100%; text-align: start;
+    border: 1px solid var(--divider-color, #ddd); border-radius: 12px; background: color-mix(in srgb, currentColor 2%, transparent); overflow: hidden; }
+  .bin-tile[aria-pressed="true"] { border-color: var(--primary-color, #03a9f4); box-shadow: inset 0 0 0 1px var(--primary-color, #03a9f4); }
+  .bin-tile:hover { background: color-mix(in srgb, currentColor 5%, transparent); }
+  .bin-tile .bins { max-width: none; }
+  .bin-tile .bin { width: 30px; height: 50px; filter: none; }
+  .bin-tile ha-icon { flex-shrink: 0; color: var(--secondary-text-color, #727272); }
+  .tile-copy { min-width: 0; }
+  .tile-copy strong { display: block; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+  .source-name { display: block; font-size: 11px; line-height: 1.4; color: var(--secondary-text-color, #727272); margin-top: 4px; overflow-wrap: anywhere; }
+  .tile-date { display: block; font-size: 12px; margin-top: 8px; text-transform: capitalize; }
+  .tile-color { position: absolute; inset: auto 0 0; height: 3px; }
+  .filter-reset { background: transparent; border: 0; color: var(--primary-color, #03a9f4); font-size: 12px; min-height: 44px; padding: 8px; }
+  .source-status { display: flex; align-items: center; gap: 8px; margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--divider-color, #ddd);
+    color: var(--secondary-text-color, #727272); font-size: 12px; }
+  .source-status ha-icon { --mdc-icon-size: 18px; flex-shrink: 0; }
+  .source-status.stale ha-icon, .source-status.unavailable ha-icon { color: var(--warning-color, #b26a00); }
+  .source-links { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+  .source-links button { border: 0; background: transparent; color: var(--secondary-text-color, #727272); font-size: 12px; min-height: 44px; padding: 6px 0; overflow-wrap: anywhere; text-align: start; max-width: 100%; }
+  @container (max-width: 330px) { .bin-grid { grid-template-columns: 1fr; } .overview-next { align-items: flex-start; } }
   @media (max-width: 360px) {
     .surface {
       padding: 16px;

@@ -32,7 +32,7 @@ Overrides retain the existing category `type` matcher, with optional `source` an
 
 The visible range starts today and ends before today + `days_to_show`. Integration-supplied today/cutoff behavior is preserved by using only the records the sensor publishes. The controller checks the home date every minute and refreshes after the tab becomes visible again.
 
-A weak map keyed by the authenticated HA connection shares calendar reads between components. Entries include the entity, query range and entity update stamp. Pending requests remain shared; completed results have a one-minute cache. Pending entries are not evicted to make room for new requests, and the cache admits at most 100 entries per connection. The request range is widened to cover all local-day offsets; the projection applies the exact home-date range.
+A weak map keyed by the authenticated HA connection shares calendar reads between cards, badges and visual editors. Entries include the entity, query range and entity update stamp. Pending requests remain shared; completed results have a one-minute cache. Pending entries are not evicted to make room for new requests, and the cache admits at most 100 entries per connection. The request range is widened to cover all local-day offsets; the projection applies the exact home-date range.
 
 Removal invalidates pending publications and removes the component timer/listener. HA's supplied `callApi` owns the actual transport, so an already-issued request may finish after removal. A new connection or source configuration clears the local stale-data cache.
 
@@ -40,11 +40,17 @@ States are loading, ready, empty, unavailable and stale. A failed source retains
 
 ## Presentation and host integration
 
-The compact, hero and schedule layouts share the same group/chip renderers. The custom badge shares their controller, projection and details dialog. Mixed pickups never inherit one collection's identity as the whole group's identity. Visible groups show at most six collection chips and an overflow count. The details dialog retains the full schedule in 100-collection pages; closed dialogs do not mount collection rows.
+The compact, hero, schedule and overview layouts share the same group/chip renderers. The custom badge shares their controller, projection and details dialog. Mixed pickups never inherit one collection's identity as the whole group's identity. Visible groups show at most six collection chips and an overflow count. The details dialog retains the full schedule in 100-collection pages; closed dialogs do not mount collection rows.
+
+Overview tiles use source, category and original provider label for identity, independently of the displayed alias. Each tile shows that bin's earliest supplied date in the projected range. Lists paginate after 12 bins. Selecting a tile filters the upcoming rows and dialog; it does not change the global next-pickup header or saved configuration. Missing or hidden bins cannot be inferred as physical inventory.
+
+The editor discovers sensor bins before overrides and calendar bins through the shared controller with overrides disabled, so hiding a calendar bin does not remove its editing control. Source, range, connection and timezone changes fence old reads. Only one bin panel opens at a time; broader category settings retain their existing inheritance. English and Polish labels cover the editor and card.
 
 Artwork is optional and decorative. Source/customized colors and explicit card overrides can color a bin. A `default` color may style the corresponding collection icon, but its bin remains neutral. Missing colors also remain neutral.
 
 HA theme variables control card surface, text, border, radius, shadow and primary action color. Layouts wrap long names; interactive controls have a minimum 44px target. The native HTML dialog supplies modal focus handling and Escape dismissal. Urgency appears in localized text.
+
+Native is the default appearance; Modern adds a theme-primary tinted overview header and rounded card, while Minimal reduces tile framing. Comfortable and Compact spacing are independent of bin colors. Overview tiles respond to their card container width, including narrow Sections columns. Overview source buttons open native entity details; timestamps remain provider-backed and optional.
 
 Both components register picker entries and visual editors. The card implements sizing for Masonry and Sections. Configuration changes use HA's `config-changed` event. The supported host contracts are documented in [custom cards](https://developers.home-assistant.io/docs/frontend/custom-ui/custom-card/) and [custom badges](https://developers.home-assistant.io/docs/frontend/custom-ui/custom-badge/).
 

@@ -28,9 +28,13 @@ export function validateConfig(value: CardConfig): CardConfig {
     throw new Error("Choose 1–12 sensor or calendar entities.");
   if (
     value.layout !== undefined &&
-    !["compact", "hero", "schedule"].includes(value.layout)
+    !["compact", "hero", "schedule", "overview"].includes(value.layout)
   )
     throw new Error("Unknown layout.");
+  if (value.appearance !== undefined && !["native", "modern", "minimal"].includes(value.appearance))
+    throw new Error("Unknown appearance.");
+  if (value.density !== undefined && !["comfortable", "compact"].includes(value.density))
+    throw new Error("Unknown density.");
   for (const [key, max] of [
     ["days_to_show", 366],
     ["max_groups", 50],
@@ -39,7 +43,7 @@ export function validateConfig(value: CardConfig): CardConfig {
     if (n !== undefined && (!Number.isInteger(n) || n < 1 || n > max))
       throw new Error(`${key} must be 1–${max}.`);
   }
-  for (const key of ["show_artwork", "show_updated", "show_manage_bins"] as const)
+  for (const key of ["show_artwork", "show_updated", "show_manage_bins", "show_source"] as const)
     if (value[key] !== undefined && typeof value[key] !== "boolean")
       throw new Error(`${key} must be true or false.`);
   if (value.title !== undefined && typeof value.title !== "string")

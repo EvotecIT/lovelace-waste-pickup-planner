@@ -21,6 +21,7 @@ export function projectEvents(
     if (!unique.has(key))
       unique.set(key, {
         ...event,
+        originalLabel: event.originalLabel ?? event.label,
         label: override?.name ?? event.label,
         color: override?.color ?? event.color,
         colorSource: override?.color ? "customize" : event.colorSource,

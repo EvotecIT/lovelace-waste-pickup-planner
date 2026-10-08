@@ -4,12 +4,12 @@ import type { CardConfig, CollectionEvent, HomeAssistant, TypeOverride } from ".
 
 /** The provider's complete name remains part of identity when categories are shared. */
 export const binKey = (event: CollectionEvent): string =>
-  JSON.stringify([event.sourceId, event.typeId ?? event.label, event.label]);
+  JSON.stringify([event.sourceId, event.typeId ?? event.originalLabel ?? event.label, event.originalLabel ?? event.label]);
 
 export const matchesCollection = (event: CollectionEvent, override: TypeOverride): boolean =>
-  override.type === (event.typeId ?? event.label) &&
+  override.type === (event.typeId ?? event.originalLabel ?? event.label) &&
   (override.source === undefined || override.source === event.sourceId) &&
-  (override.label === undefined || override.label === event.label);
+  (override.label === undefined || override.label === (event.originalLabel ?? event.label));
 
 const specificity = (override: TypeOverride) => Number(override.source !== undefined) + Number(override.label !== undefined) * 2;
 
@@ -45,8 +45,8 @@ export function suggestedSources(hass: HomeAssistant, config: CardConfig): strin
     .map(e => e.entity_id)])];
 }
 
-/** Discover editable bins from the selected structured sensors, before display overrides. */
-export function availableBins(hass: HomeAssistant, config: CardConfig): CollectionEvent[] {
+/** Discover bins before overrides; calendar entries come from the shared authenticated controller. */
+export function availableBins(hass: HomeAssistant, config: CardConfig, calendarEntries: CollectionEvent[] = []): CollectionEvent[] {
   const bins = new Map<string, CollectionEvent>();
   for (const id of sourceIds(config)) {
     const entity = hass.states[id];
@@ -55,5 +55,20 @@ export function availableBins(hass: HomeAssistant, config: CardConfig): Collecti
       if (!bins.has(binKey(event))) bins.set(binKey(event), event);
     }
   }
+  const selected = new Set(sourceIds(config));
+  for (const event of calendarEntries) {
+    if (event.sourceId.startsWith("calendar.") && selected.has(event.sourceId) && !bins.has(binKey(event)))
+      bins.set(binKey(event), event);
+  }
   return [...bins.values()].sort((a, b) => a.label.localeCompare(b.label) || a.sourceId.localeCompare(b.sourceId));
+}
+
+/** One next occurrence per source/bin, with display aliases excluded from identity. */
+export function nextBins(events: CollectionEvent[]): CollectionEvent[] {
+  const next = new Map<string, CollectionEvent>();
+  for (const event of events) {
+    const previous = next.get(binKey(event));
+    if (!previous || event.date < previous.date) next.set(binKey(event), event);
+  }
+  return [...next.values()].sort((a, b) => a.date.localeCompare(b.date) || a.label.localeCompare(b.label) || a.sourceId.localeCompare(b.sourceId));
 }
