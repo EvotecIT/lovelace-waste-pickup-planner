@@ -73,7 +73,7 @@ badge in each relevant combination:
   navigation against the actual HA host.
 
 The preview's **125 collections** fixture exercises bin pages and both dialog pages. The first
-page contains collections 001â€“100 and the second contains 101â€“125. Use the
+page contains collections 001–100 and the second contains 101–125. Use the
 independent language selector to inspect each state in English and Polish.
 
 ### Measured preview text contrast
@@ -131,15 +131,17 @@ other browser engines, editor changes, or an upgrade from a published release.
 ## Keyboard focus and current packaged preview
 
 On 18 October 2026, the built resource with SHA-256
-`BF7AAF01EDFC04CA8870C950072C61CD5D1D59C0ED989D1BE9944FC3A54D54D7`
+`314BF2DE817D5E27DD90E9A9542E15CD4351B4D760AEFA67A319CEDDE3A85D17`
 passed automated checks in Chrome 155.0.8059.80 on Windows. The disposable
 qualification runner used the published HtmlTinkerX 3.0.5 browser owner.
 
 - A dialog containing only its Close button keeps focus on that button through
   Tab and Shift+Tab. Escape returns focus to the card's opening control.
-- The badge's 125-collection dialog wraps focus between enabled controls.
-  Moving between pages keeps focus on an enabled pagination button; Escape
-  returns focus to the badge.
+- The card and badge's 125-collection dialogs wrap focus between enabled controls.
+  Changing pages starts at the first collection and focuses the visible Close
+  button in the header. Both page transitions were checked at 1280 × 900,
+  360 × 800 and 760 × 360: the dialog scroll position is zero and the first
+  collection and focused control remain visible. Escape restores the opener.
 - All four card layouts show the expected English and Polish messages for empty,
   unavailable and stale schedules. The 36-state matrix combines those languages
   with six schedule fixtures at 1280 × 900, 360 × 800 and 760 × 360. No state

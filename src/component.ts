@@ -170,14 +170,12 @@ export class WastePickupPlannerCard extends LitElement {
     this.dispatchEvent(new CustomEvent("hass-more-info", { detail: { entityId }, bubbles: true, composed: true }));
   }
   private async changeDetailsPage(page: number): Promise<void> {
-    const focused = (this.renderRoot as ShadowRoot).activeElement;
     this.detailsPage = page;
     await this.updateComplete;
     const dialog = this.renderRoot.querySelector<HTMLDialogElement>("dialog");
+    // Start each page at its content with a visible keyboard target in the header.
+    dialog?.querySelector<HTMLButtonElement>(".close")?.focus({ preventScroll: true });
     dialog?.scrollTo(0, 0);
-    if (focused instanceof HTMLButtonElement &&
-        dialog?.contains(focused) && !focused.disabled) focused.focus();
-    else dialog?.querySelector<HTMLButtonElement>(".pages button:not([disabled])")?.focus();
   }
   private keepDetailsFocus(event: KeyboardEvent): void {
     if (event.key !== "Tab") return;
