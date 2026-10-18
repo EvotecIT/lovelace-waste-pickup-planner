@@ -128,6 +128,36 @@ of the shipped bundle. They do not measure garbage collection or total retained
 heap, prove cancellation of HA's shared HTTP transport, or qualify installed HA,
 other browser engines, editor changes, or an upgrade from a published release.
 
+## Keyboard focus and current packaged preview
+
+On 18 October 2026, the built resource with SHA-256
+`BF7AAF01EDFC04CA8870C950072C61CD5D1D59C0ED989D1BE9944FC3A54D54D7`
+passed automated checks in Chrome 155.0.8059.80 on Windows. The disposable
+qualification runner used the published HtmlTinkerX 3.0.5 browser owner.
+
+- A dialog containing only its Close button keeps focus on that button through
+  Tab and Shift+Tab. Escape returns focus to the card's opening control.
+- The badge's 125-collection dialog wraps focus between enabled controls.
+  Moving between pages keeps focus on an enabled pagination button; Escape
+  returns focus to the badge.
+- All four card layouts show the expected English and Polish messages for empty,
+  unavailable and stale schedules. The 36-state matrix combines those languages
+  with six schedule fixtures at 1280 × 900, 360 × 800 and 760 × 360. No state
+  overflows the page horizontally. Desktop focus, narrow long-label, short
+  landscape, light-theme and custom-theme screenshots were also inspected.
+- Twenty attachment/removal cycles each for the card and badge leave no measured
+  intervals or document visibility listeners after removal. Each attached
+  instance owns one of each. This does not measure garbage collection or heap
+  retention.
+- The browser reported no errors. Its observed requests were confined to the
+  local preview and its two JavaScript resources.
+
+The keyboard fix uses the same dialog implementation for cards and badges.
+These observations qualify the stated packaged-preview contracts. Actual HA
+frontend/editor behavior, other browser engines, zoom/assistive-technology
+coverage, published-artifact upgrades and retained-heap measurements remain
+separate acceptance work. Browser checks are not yet a maintained CI gate.
+
 ## Native Home Assistant bin controls
 
 The resource with SHA-256 `D83ECFE81E273BE1B1068C4ABD8942B5D5A4EB6A4D2B864BB7613DA1F7E2AB9F`
