@@ -17,7 +17,7 @@ reproducible checks, and remaining evidence gaps.
 2. Open its details and select **Download**.
 3. Reload your browser after installation.
 
-For a preview release, enable beta versions when choosing the download version.
+To install a preview release, select **Download** or **Redownload**, choose **Need a different version?**, and select the preview release.
 
 HACS installs the resource at:
 
