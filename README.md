@@ -11,9 +11,13 @@ reproducible checks, and remaining evidence gaps.
 
 ## Install
 
-### HACS custom repository
+### HACS
 
-Add `EvotecIT/lovelace-waste-pickup-planner` as a **Dashboard** custom repository in HACS, then download Waste Pickup Planner. For a preview release, enable beta versions when choosing the download version. Reload the browser after installation.
+1. Open **HACS** in Home Assistant and search for **Waste Pickup Planner**.
+2. Open its details and select **Download**.
+3. Reload your browser after installation.
+
+To install a preview release, select **Download** or **Redownload**, choose **Need a different version?**, and select the preview release.
 
 HACS installs the resource at:
 
@@ -21,8 +25,6 @@ HACS installs the resource at:
 url: /hacsfiles/lovelace-waste-pickup-planner/waste-pickup-planner-card.js
 type: module
 ```
-
-This is a custom repository; it is not included in HACS's default catalog.
 
 ### Manual installation
 
