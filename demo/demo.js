@@ -180,19 +180,27 @@ const themes = {
     "--primary-text-color": "#1f1a24", "--secondary-text-color": "#6b6375", "--card-background-color": "#ffffff",
     "--divider-color": "#ddd5e6", "--primary-color": "#8e44ad", "--ha-card-border-radius": "4px" } },
 };
+// Switching applies the theme in place, so the selected state, layout options and
+// bin filters stay put for a side-by-side comparison; the URL keeps it shareable.
+const applyTheme = (key) => {
+  const root = document.documentElement;
+  for (const theme of Object.values(themes))
+    for (const name of Object.keys(theme.vars ?? {})) root.style.removeProperty(name);
+  for (const property of ["color-scheme", "background", "background-attachment"]) root.style.removeProperty(property);
+  const theme = themes[key];
+  if (!theme.vars) return;
+  for (const [name, value] of Object.entries(theme.vars)) root.style.setProperty(name, value);
+  root.style.colorScheme = theme.scheme;
+  root.style.background = theme.page;
+  root.style.backgroundAttachment = "fixed";
+};
 const requestedTheme = new URLSearchParams(location.search).get("theme");
-const themeKey = themes[requestedTheme] ? requestedTheme : "demo";
 const themeSelect = document.querySelector("#theme");
-themeSelect.value = themeKey;
+themeSelect.value = themes[requestedTheme] ? requestedTheme : "demo";
+applyTheme(themeSelect.value);
 themeSelect.addEventListener("change", () => {
+  applyTheme(themeSelect.value);
   const next = new URLSearchParams(location.search);
   next.set("theme", themeSelect.value);
-  location.search = next.toString();
+  history.replaceState(null, "", `?${next}`);
 });
-if (themes[themeKey].vars) {
-  const root = document.documentElement;
-  for (const [name, value] of Object.entries(themes[themeKey].vars)) root.style.setProperty(name, value);
-  root.style.colorScheme = themes[themeKey].scheme;
-  root.style.background = themes[themeKey].page;
-  root.style.backgroundAttachment = "fixed";
-}
