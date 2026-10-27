@@ -16,6 +16,40 @@ export function homeDate(now: Date, timeZone: string): string {
   const part = (key: string) => parts.find((p) => p.type === key)!.value;
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
+/** The hour (0–23) on the home clock. */
+export function homeHour(now: Date, timeZone: string): number {
+  const hour = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "numeric", hourCycle: "h23" })
+    .formatToParts(now).find(p => p.type === "hour")!.value;
+  return Number(hour) % 24;
+}
+
+export type CollectionMoment = "today" | "tonight" | "upcoming";
+
+/**
+ * What the next collection asks of you now: it is today, or it is tomorrow and the
+ * evening has started (the bins go out tonight), or it is further away.
+ */
+export function collectionMoment(next: string, today: string, hour: number, eveningHour = 18): CollectionMoment {
+  const distance = daysBetween(today, next);
+  if (distance === 0) return "today";
+  return distance === 1 && hour >= eveningHour ? "tonight" : "upcoming";
+}
+
+/**
+ * The collection the card leads with. From the evening hour, tomorrow's bins come
+ * first even when there was a collection today: today's is over, tonight's isn't.
+ */
+export function headline<T extends { date: string }>(
+  groups: readonly T[], today: string, hour: number, eveningHour = 18,
+): { group: T; index: number; moment: CollectionMoment } | undefined {
+  if (!groups.length) return undefined;
+  if (hour >= eveningHour) {
+    const index = groups.findIndex(group => daysBetween(today, group.date) === 1);
+    if (index >= 0) return { group: groups[index], index, moment: "tonight" };
+  }
+  return { group: groups[0], index: 0, moment: collectionMoment(groups[0].date, today, hour, eveningHour) };
+}
+
 export function addDays(date: string, days: number): string {
   const value = new Date(`${date}T12:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);

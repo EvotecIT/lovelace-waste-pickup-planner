@@ -3,6 +3,9 @@ import type { SourceIssue } from "./types.ts";
 const en = {
   title: "Waste collection",
   next: "Next collection",
+  putOutTonight: "Put out tonight",
+  collectedTomorrow: "Collected tomorrow",
+  comingDays: "Coming days",
   schedule: "Collection schedule",
   close: "Close",
   loading: "Loading schedule…",
@@ -34,6 +37,9 @@ const en = {
 const pl: typeof en = {
   title: "Odbiór odpadów",
   next: "Najbliższy odbiór",
+  putOutTonight: "Wystaw dziś wieczorem",
+  collectedTomorrow: "Odbiór jutro",
+  comingDays: "Najbliższe dni",
   schedule: "Harmonogram odbioru",
   close: "Zamknij",
   loading: "Ładowanie harmonogramu…",

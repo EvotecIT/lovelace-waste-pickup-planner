@@ -33,7 +33,7 @@ export const styles = css`
   }
   /* Tapping anywhere on the card opens the schedule, like Home Assistant's own cards.
      The button covers the card behind its content; the content lets clicks through. */
-  .surface.tappable > :not(.surface-action) {
+  .surface.tappable > :not(.surface-action, .sr-only) {
     position: relative;
     pointer-events: none;
   }
@@ -106,6 +106,81 @@ export const styles = css`
   }
   .hero .date {
     font-size: clamp(26px, 8cqi, 38px);
+  }
+  /* From the evening before: the card asks you to put the bins out. */
+  .primary.tonight .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--primary-color, #03a9f4);
+  }
+  .primary.tonight .eyebrow ha-icon {
+    --mdc-icon-size: 16px;
+  }
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+    gap: 2px;
+    margin-top: 18px;
+    padding: 8px 4px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--primary-text-color, #212121) 4%, transparent);
+  }
+  .strip-day {
+    display: grid;
+    justify-items: center;
+    gap: 3px;
+    min-width: 0;
+    padding: 4px 0;
+    border-radius: 8px;
+    color: var(--secondary-text-color, #727272);
+    font-size: 11px;
+    line-height: 1.1;
+  }
+  .strip-day.today {
+    color: var(--primary-text-color, #212121);
+    box-shadow: inset 0 0 0 1px var(--primary-color, #03a9f4);
+  }
+  .strip-day.has-pickup .strip-date {
+    color: var(--primary-text-color, #212121);
+    font-weight: 600;
+  }
+  .strip-date {
+    font-size: 12px;
+  }
+  /* Dots stack so each day stays one narrow column, whatever the card width. */
+  .strip-dots {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: 25px;
+  }
+  .strip-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--waste-type-color);
+  }
+  .strip-dot.neutral {
+    background: var(--secondary-text-color, #727272);
+  }
+  .strip-more {
+    font-size: 9px;
+    line-height: 7px;
+    color: var(--secondary-text-color, #727272);
+  }
+  .surface.schedule .strip {
+    margin: 0 0 8px;
+  }
+  /* A narrow card shows one week, so each day keeps room for its date. */
+  @container (max-width: 340px) {
+    .strip {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+    .strip-day:nth-child(n + 8) {
+      display: none;
+    }
   }
   .full-date {
     color: var(--secondary-text-color, #727272);
@@ -340,7 +415,7 @@ export const styles = css`
   .bin-tile:hover { background: color-mix(in srgb, currentColor 5%, transparent); }
   .bin-tile .bins { max-width: none; }
   .bin-tile .bin { width: 30px; height: 50px; filter: none; }
-  .bin-tile ha-icon { flex-shrink: 0; color: var(--secondary-text-color, #727272); }
+  .bin-tile > ha-icon { flex-shrink: 0; color: var(--secondary-text-color, #727272); }
   .tile-copy { min-width: 0; }
   .tile-copy strong { display: block; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
   .source-name { display: block; font-size: 11px; line-height: 1.4; color: var(--secondary-text-color, #727272); margin-top: 4px; overflow-wrap: anywhere; }

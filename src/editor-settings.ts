@@ -6,7 +6,9 @@ export function editorData(config: CardConfig): Record<string, unknown> {
   return { ...config, entities: sourceIds(config), layout: config.layout ?? "compact",
     appearance: config.appearance ?? "native", density: config.density ?? "comfortable",
     show_artwork: config.show_artwork ?? config.layout === "overview",
-    show_source: config.show_source ?? sourceIds(config).length > 1 };
+    show_source: config.show_source ?? sourceIds(config).length > 1,
+    show_strip: config.show_strip ?? ["hero", "overview"].includes(config.layout ?? "compact"),
+    evening_hour: config.evening_hour ?? 18 };
 }
 
 /** HA forms return their complete values, including untouched display defaults. */

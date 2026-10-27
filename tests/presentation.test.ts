@@ -26,6 +26,12 @@ test("screen readers hear the row's calendar date as well as its distance", () =
   assert.equal(spokenRowDate("2026-10-28", today, "en-GB"), "Tomorrow · Wednesday 28 October");
 });
 
+test("strip day numbers follow the locale's calendar and digits", () => {
+  const day = new Intl.DateTimeFormat("fa", { day: "numeric", timeZone: "UTC" }).format(new Date("2026-10-28T12:00:00Z"));
+  assert.notEqual(day, "28");
+  assert.equal(new Intl.DateTimeFormat("en", { day: "numeric", timeZone: "UTC" }).format(new Date("2026-10-28T12:00:00Z")), "28");
+});
+
 test("the bin icon takes whichever of dark or white has more contrast", () => {
   assert.equal(iconOn("#e1b950"), "#1f1f1f");
   assert.equal(iconOn("#fff"), "#1f1f1f");

@@ -83,9 +83,10 @@ export class WastePickupPlannerEditor extends LitElement {
       select("appearance", ["native", "modern", "minimal"]), select("density", ["comfortable", "compact"]),
       { name: "days_to_show", selector: { number: { min: 1, max: 366, mode: "box" } } },
       { name: "max_groups", selector: { number: { min: 1, max: 50, mode: "box" } } },
-      ...["show_artwork", "show_updated", "show_manage_bins", "show_source"].map(name => ({ name, selector: { boolean: {} } })),
+      { name: "evening_hour", selector: { number: { min: 0, max: 23, mode: "box", unit_of_measurement: "h" } } },
+      ...["show_artwork", "show_updated", "show_manage_bins", "show_source", "show_strip"].map(name => ({ name, selector: { boolean: {} } })),
       { name: "locale", selector: { text: {} } },
-    ].filter(s => names.includes(s.name) && (!badge || !["layout", "max_groups", "show_artwork", "show_manage_bins", "appearance", "density", "show_source"].includes(s.name)));
+    ].filter(s => names.includes(s.name) && (!badge || !["layout", "max_groups", "show_artwork", "show_manage_bins", "appearance", "density", "show_source", "show_strip"].includes(s.name)));
     if (!schema.length) return nothing;
     const data = editorData(this.config!);
     return html`<ha-form .hass=${this.ha} .data=${data} .schema=${schema}
@@ -137,7 +138,7 @@ export class WastePickupPlannerEditor extends LitElement {
     const namingChoices = [...choices, ...manualChoices];
     return html`<h3>${t.source}</h3>${this.form(["entities", "title", "layout"], t)}<p>${t.sourceHelp}</p>
       ${unsupported.length ? html`<p class="warning" role="status">${unsupported.join(", ")}: ${t.unsupported}</p>` : nothing}
-      ${!this.config.type.includes("badge") ? html`<h3>${t.appearanceSection}</h3>${this.form(["appearance", "density", "show_artwork", "show_source", "show_manage_bins"], t)}` : nothing}
+      ${!this.config.type.includes("badge") ? html`<h3>${t.appearanceSection}</h3>${this.form(["appearance", "density", "show_artwork", "show_strip", "show_source", "show_manage_bins"], t)}` : nothing}
       <h3>${t.binsSection}</h3><p>${t.binsHelp}</p>
       ${overrides.length >= 100 ? html`<p role="status">${t.overrideLimit}</p>` : nothing}
       <div class="bin-list">${bins.map((bin, index) => {
@@ -157,7 +158,7 @@ export class WastePickupPlannerEditor extends LitElement {
       ${!bins.length ? html`<p>${t.noBins}</p>` : nothing}
       ${sourceIds(this.config).some(id => id.startsWith("calendar.")) ? html`<p>${t.rangeHelp}</p>
         ${!this.calendarSnapshot || this.calendarSnapshot.status === "loading" ? html`<p role="status">${t.calendarLoading}</p>` : this.calendarSnapshot.messages.some(m => m.source.startsWith("calendar.")) ? html`<p class="warning" role="status">${t.calendarFailed} <button @click=${this.refreshBins}>${t.retry}</button></p>` : nothing}` : nothing}
-      <details><summary>${t.advanced}</summary>${this.form(["days_to_show", "max_groups", "show_updated", "locale"], t)}
+      <details><summary>${t.advanced}</summary>${this.form(["days_to_show", "max_groups", "evening_hour", "show_updated", "locale"], t)}
         <label>${t.tap}<select .value=${this.config.tap_action?.action ?? "details"} @change=${(e: Event) => this.changed({ tap_action: { action: (e.target as HTMLSelectElement).value as "details" } })}>
           ${(["details", "more-info", "navigate", "none"] as const).map(a => html`<option value=${a}>${t[a]}</option>`)}</select></label>
         ${this.config.tap_action?.action === "navigate" ? html`<label>${t.navigationPath}<input .value=${this.config.tap_action.navigation_path ?? ""} placeholder="/lovelace/waste"
