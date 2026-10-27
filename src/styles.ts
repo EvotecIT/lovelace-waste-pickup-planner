@@ -33,7 +33,7 @@ export const styles = css`
   }
   /* Tapping anywhere on the card opens the schedule, like Home Assistant's own cards.
      The button covers the card behind its content; the content lets clicks through. */
-  .surface.tappable > :not(.surface-action) {
+  .surface.tappable > :not(.surface-action, .sr-only) {
     position: relative;
     pointer-events: none;
   }

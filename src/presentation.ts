@@ -112,7 +112,13 @@ export const strip = (events: CollectionEvent[], today: string, locale: string, 
   const weekday = new Intl.DateTimeFormat(locale, { weekday: "narrow", timeZone: "UTC" });
   const dayNumber = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
   const shown = 3;
-  return html`<div class="strip" aria-hidden="true">
+  // max_groups can leave strip dates without a schedule row, so the strip carries its
+  // own text for screen readers: every pickup day it marks, with the bins.
+  const spoken = new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+  const pickups = Array.from({ length: days }, (_, index) => addDays(today, index)).filter(date => byDate.has(date));
+  return html`${pickups.length ? html`<div class="sr-only"><p>${strings(locale).comingDays}</p><ul>${pickups.map(date =>
+    html`<li>${spoken.format(new Date(`${date}T12:00:00Z`))}: ${byDate.get(date)!.map(e => e.label).join(", ")}</li>`)}</ul></div>` : nothing}
+  <div class="strip" aria-hidden="true">
     ${Array.from({ length: days }, (_, index) => {
       const date = addDays(today, index);
       const items = byDate.get(date) ?? [];

@@ -1,7 +1,7 @@
 import { LitElement, html, nothing } from "lit";
 import { sourceIds, validateConfig } from "./config.ts";
 import { ScheduleController } from "./controller.ts";
-import { collectionMoment, dateLabel, homeDate, homeHour, updateLabel } from "./dates.ts";
+import { dateLabel, headline, homeDate, homeHour, updateLabel } from "./dates.ts";
 import { groupEvents } from "./schedule.ts";
 import { groupRows, nextCollection, strip } from "./presentation.ts";
 import { strings, sourceMessage } from "./strings.ts";
@@ -181,8 +181,11 @@ export class WastePickupPlannerCard extends LitElement {
       snapshot = this.snapshot;
     const events = [...(snapshot?.events ?? [])].sort(collectionOrder(locale));
     const groups = groupEvents(events),
-      next = groups[0],
       today = snapshot?.rangeStart ?? this.day ?? "2000-01-01";
+    const lead = headline(groups, today, this.hour ?? 0, this.config.evening_hour ?? 18);
+    const next = lead?.group;
+    // Rows below the lead start after it; an evening lead skips today's finished collection.
+    const later = lead ? groups.slice(lead.index + 1) : [];
     const selected = this.config.layout === "overview" && snapshot?.events.some(e => binKey(e) === this.selectedBin) ? this.selectedBin : undefined;
     const detailEvents = selected ? events.filter(e => binKey(e) === selected) : events;
     const sources = sourceIds(this.config);
@@ -202,9 +205,7 @@ export class WastePickupPlannerCard extends LitElement {
         ? `${new Intl.NumberFormat(locale).format(next.events.length)} ${t.collections}`
         : next.events.map((e) => e.label).join(" · ")
       : message;
-    const moment = next
-      ? collectionMoment(next.date, today, this.hour ?? 0, this.config.evening_hour ?? 18)
-      : "upcoming";
+    const moment = lead?.moment ?? "upcoming";
     const date = next ? moment === "tonight" ? t.putOutTonight : dateLabel(next.date, today, locale) : message;
     const showStrip = this.config.show_strip ?? ["hero", "overview"].includes(this.config.layout ?? "compact");
     const stripDays = Math.min(14, this.config.days_to_show ?? 30);
@@ -265,7 +266,7 @@ export class WastePickupPlannerCard extends LitElement {
           ${
             next
               ? this.config.layout === "overview"
-                ? overview({ events, groups, today, locale, moment, artwork: this.config.show_artwork ?? true,
+                ? overview({ events, groups, today, locale, lead, artwork: this.config.show_artwork ?? true,
                     strip: showStrip ? stripDays : 0,
                     showSource, sources, hass: this.ha, maxGroups: this.config.max_groups!, selected, page: this.binPage,
                     select: key => { this.selectedBin = key; this.detailsPage = 0; }, changePage: page => { this.binPage = page; } })
@@ -278,7 +279,7 @@ export class WastePickupPlannerCard extends LitElement {
                 : html`${nextCollection({ group: next, today, locale, moment,
                       artwork: this.config.layout === "hero" && Boolean(this.config.show_artwork) })}
                     ${showStrip ? strip(events, today, locale, stripDays) : nothing}
-                    ${this.config.layout === "hero" && groups.length > 1 ? html`<div class="upcoming">${groupRows(groups.slice(1, this.config.max_groups), today, locale)}</div>` : nothing}`
+                    ${this.config.layout === "hero" && later.length ? html`<div class="upcoming">${groupRows(later.slice(0, this.config.max_groups! - 1), today, locale)}</div>` : nothing}`
               : html`<p class="state" role="status">${message}</p>`
           }
           ${notice}${state === "unavailable" ? snapshot?.messages.map((m) => html`<p class="state">${sourceMessage(m, locale)}</p>`) : nothing}

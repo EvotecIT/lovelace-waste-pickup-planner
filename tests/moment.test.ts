@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { collectionMoment, homeHour } from "../src/dates.ts";
+import { collectionMoment, headline, homeHour } from "../src/dates.ts";
 import { validateConfig } from "../src/config.ts";
 
 const today = "2026-10-27";
@@ -17,6 +17,15 @@ test("a collection today stays today, and later ones are upcoming", () => {
   assert.equal(collectionMoment(today, today, 7), "today");
   assert.equal(collectionMoment(today, today, 20), "today");
   assert.equal(collectionMoment("2026-10-30", today, 20), "upcoming");
+});
+
+test("from the evening, tomorrow's bins lead even after a collection today", () => {
+  const groups = [{ date: today }, { date: "2026-10-28" }, { date: "2026-11-01" }];
+  assert.deepEqual(headline(groups, today, 9), { group: groups[0], index: 0, moment: "today" });
+  assert.deepEqual(headline(groups, today, 19), { group: groups[1], index: 1, moment: "tonight" });
+  // Without a collection tomorrow, today's stays the lead.
+  assert.deepEqual(headline([groups[0], groups[2]], today, 19), { group: groups[0], index: 0, moment: "today" });
+  assert.equal(headline([], today, 19), undefined);
 });
 
 test("the hour comes from the home clock, not the browser's", () => {

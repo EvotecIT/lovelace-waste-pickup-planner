@@ -35,6 +35,21 @@ export function collectionMoment(next: string, today: string, hour: number, even
   return distance === 1 && hour >= eveningHour ? "tonight" : "upcoming";
 }
 
+/**
+ * The collection the card leads with. From the evening hour, tomorrow's bins come
+ * first even when there was a collection today: today's is over, tonight's isn't.
+ */
+export function headline<T extends { date: string }>(
+  groups: readonly T[], today: string, hour: number, eveningHour = 18,
+): { group: T; index: number; moment: CollectionMoment } | undefined {
+  if (!groups.length) return undefined;
+  if (hour >= eveningHour) {
+    const index = groups.findIndex(group => daysBetween(today, group.date) === 1);
+    if (index >= 0) return { group: groups[index], index, moment: "tonight" };
+  }
+  return { group: groups[0], index: 0, moment: collectionMoment(groups[0].date, today, hour, eveningHour) };
+}
+
 export function addDays(date: string, days: number): string {
   const value = new Date(`${date}T12:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);
