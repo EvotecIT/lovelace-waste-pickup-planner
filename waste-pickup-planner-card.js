@@ -38,7 +38,7 @@ var re=globalThis,se=re.ShadowRoot&&(re.ShadyCSS===void 0||re.ShadyCSS.nativeSha
   :host {
     display: block;
     color: var(--primary-text-color, #212121);
-    font-family: var(--ha-font-family, inherit);
+    font-family: var(--ha-font-family-body, inherit);
   }
   * {
     box-sizing: border-box;
@@ -47,7 +47,7 @@ var re=globalThis,se=re.ShadowRoot&&(re.ShadyCSS===void 0||re.ShadyCSS.nativeSha
     display: block;
     overflow: hidden;
     background: var(--ha-card-background, var(--card-background-color, #fff));
-    border-radius: var(--ha-card-border-radius, 16px);
+    border-radius: var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px));
     box-shadow: var(--ha-card-box-shadow, none);
     border: var(--ha-card-border-width, 1px) solid
       var(--ha-card-border-color, var(--divider-color, #ddd));
@@ -270,24 +270,25 @@ var re=globalThis,se=re.ShadowRoot&&(re.ShadyCSS===void 0||re.ShadyCSS.nativeSha
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* A modal needs an opaque surface even when cards are see-through. */
   dialog {
     color: var(--primary-text-color, #212121);
-    background: var(--ha-card-background, var(--card-background-color, #fff));
+    background: var(--ha-dialog-surface-background, var(--card-background-color, #fff));
     border: 1px solid var(--divider-color, #ddd);
-    border-radius: 20px;
+    border-radius: var(--ha-dialog-border-radius, 24px);
     padding: 20px;
     width: min(480px, calc(100vw - 24px));
     max-height: calc(100dvh - 32px);
     overflow: auto;
-    box-shadow: 0 20px 80px #0005;
+    box-shadow: var(--dialog-box-shadow, 0 20px 80px #0005);
   }
   dialog::backdrop {
-    background: #0007;
+    background: var(--mdc-dialog-scrim-color, rgba(0, 0, 0, 0.32));
   }
   dialog .heading {
     position: sticky;
     top: -20px;
-    background: var(--ha-card-background, var(--card-background-color, #fff));
+    background: var(--ha-dialog-surface-background, var(--card-background-color, #fff));
     padding: 12px 0;
     margin: 0;
     z-index: 1;
@@ -299,7 +300,7 @@ var re=globalThis,se=re.ShadowRoot&&(re.ShadyCSS===void 0||re.ShadyCSS.nativeSha
     min-height: 44px;
     border-radius: 50%;
   }
-  ha-card[data-appearance="modern"] { border-radius: max(20px, var(--ha-card-border-radius, 16px)); }
+  ha-card[data-appearance="modern"] { border-radius: max(20px, var(--ha-card-border-radius, var(--ha-border-radius-lg, 12px))); }
   ha-card[data-appearance="modern"] .overview-next {
     padding: 18px;
     border-radius: 16px;
