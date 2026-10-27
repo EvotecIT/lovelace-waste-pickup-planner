@@ -1,12 +1,45 @@
 import { html, nothing } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
-import { dateLabel } from "./dates.ts";
+import { rowDateLabel } from "./dates.ts";
 import { strings } from "./strings.ts";
 import { artworkColor } from "./schedule.ts";
 import type { CollectionEvent, DateGroup } from "./types.ts";
+
+/** Hex or rgb() colours as [r, g, b]; anything else (a name, a variable) is unknown. */
+function channels(color: string): [number, number, number] | undefined {
+  const hex = /^#([\da-f]{3}|[\da-f]{6})$/i.exec(color.trim())?.[1];
+  if (hex) {
+    const full = hex.length === 3 ? [...hex].map(c => c + c).join("") : hex;
+    return [0, 2, 4].map(i => parseInt(full.slice(i, i + 2), 16)) as [number, number, number];
+  }
+  const rgb = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i.exec(color.trim());
+  return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : undefined;
+}
+
+/** Dark or white, whichever reads better on the bin's colour; white when it can't be measured. */
+export function iconOn(color: string): string {
+  const rgb = channels(color);
+  if (!rgb) return "#fff";
+  const [r, g, b] = rgb.map(value => {
+    const c = value / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#1f1f1f" : "#fff";
+}
+
+/**
+ * People know their bins by colour, so each chip leads with a filled circle in the
+ * bin's own colour. Only a colour from the source or the user's customisation counts;
+ * others stay neutral rather than guessing from the waste name.
+ */
 export const chips = (events: CollectionEvent[], locale: string, limit = 6) =>
   html`<div class="chips">
-    ${events.slice(0, limit).map((e) => html`<span class="chip" style=${styleMap({ "--waste-type-color": e.color })}><ha-icon aria-hidden="true" .icon=${e.icon ?? "mdi:trash-can-outline"}></ha-icon><span>${e.label}</span></span>`)}
+    ${events.slice(0, limit).map((e) => {
+      const color = artworkColor(e);
+      return html`<span class="chip"><span class=${`swatch${color ? "" : " neutral"}`} aria-hidden="true"
+        style=${styleMap(color ? { "--waste-type-color": color, "--waste-icon-color": iconOn(color) } : {})}><ha-icon
+        .icon=${e.icon ?? "mdi:trash-can-outline"}></ha-icon></span><span>${e.label}</span></span>`;
+    })}
     ${events.length > limit ? html`<span class="chip overflow">+${new Intl.NumberFormat(locale).format(events.length - limit)} ${strings(locale).more}</span>` : nothing}
   </div>`;
 export const bins = (events: CollectionEvent[]) =>
@@ -45,7 +78,7 @@ export const groupRows = (groups: DateGroup[], today: string, locale: string, ch
         >
       </div>
       <div class="group-body">
-        <div class="group-date">${dateLabel(group.date, today, locale)}</div>
+        <div class="group-date">${rowDateLabel(group.date, today, locale)}</div>
         ${chips(group.events, locale, chipLimit)}
       </div>
     </div>`;

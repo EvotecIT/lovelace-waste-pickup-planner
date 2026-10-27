@@ -198,6 +198,18 @@ const requestedTheme = new URLSearchParams(location.search).get("theme");
 const themeSelect = document.querySelector("#theme");
 themeSelect.value = themes[requestedTheme] ? requestedTheme : "demo";
 applyTheme(themeSelect.value);
+// Screenshot mode for before/after images in PRs: `?capture=hero&width=420` shows only
+// that card on the theme's page background, so the capture can be trimmed.
+const capture = new URLSearchParams(location.search).get("capture");
+const captured = capture && document.querySelector(`#${CSS.escape(capture)} > *`);
+if (captured) {
+  const frame = document.createElement("div");
+  frame.style.cssText = `width:${Number(new URLSearchParams(location.search).get("width")) || 420}px;padding:16px`;
+  frame.append(captured);
+  document.body.replaceChildren(frame);
+  document.body.style.cssText = "margin:0;padding:0;max-width:none";
+  document.documentElement.style.backgroundImage = "none";
+}
 themeSelect.addEventListener("change", () => {
   applyTheme(themeSelect.value);
   const next = new URLSearchParams(location.search);

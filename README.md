@@ -90,7 +90,7 @@ Both components have visual editors. Advanced YAML uses the same options:
 | --- | --- | --- |
 | `entity` | Required unless `entities` is set | Sensor or calendar ID |
 | `entities` | — | Up to 12 explicit sources; do not also set `entity` |
-| `title` | Localized “Waste collection” | Card heading |
+| `title` | No heading | Card heading; the card shows a heading row only when you set one. The schedule dialog and badge use the localized “Waste collection” when it isn't set |
 | `layout` | `compact` | `compact`, `hero`, `schedule`, or `overview` |
 | `appearance` | `native` | `native`, `modern`, or `minimal`; card presentation |
 | `density` | `comfortable` | `comfortable` or `compact`; card spacing |
@@ -102,7 +102,7 @@ Both components have visual editors. Advanced YAML uses the same options:
 | `show_manage_bins` | `false` | Card shortcut to the Waste Collection Schedule integration page |
 | `locale` | HA language | Optional language code such as `pl` or `en-GB` |
 | `overrides` | — | Exact collection names/IDs, display names, icons, colors, visibility |
-| `tap_action.action` | `details` | `details`, `more-info`, `navigate`, or `none` |
+| `tap_action.action` | `details` | `details`, `more-info`, `navigate`, or `none`; in `compact`, `hero` and `schedule`, tapping anywhere on the card runs it, and `overview` keeps a button because its bin tiles are buttons too |
 | `tap_action.navigation_path` | — | Local dashboard path for `navigate` |
 
 `layout`, `max_groups`, `show_artwork`, `show_manage_bins`, `appearance`, `density`, and `show_source` do not change the badge presentation. `more-info` opens the first selected entity. Overview source buttons open the corresponding entity's native details.
