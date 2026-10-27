@@ -47,6 +47,10 @@ export interface CardConfig {
   show_artwork?: boolean;
   show_updated?: boolean;
   show_manage_bins?: boolean;
+  /** Local hour (0–23) from which the card says "Put out tonight" for tomorrow's bins. */
+  evening_hour?: number;
+  /** The 14-day strip of bin colours; on by default in hero and overview. */
+  show_strip?: boolean;
   locale?: string;
   overrides?: TypeOverride[];
   tap_action?: {

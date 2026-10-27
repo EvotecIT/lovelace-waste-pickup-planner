@@ -1,9 +1,9 @@
 import { LitElement, html, nothing } from "lit";
 import { sourceIds, validateConfig } from "./config.ts";
 import { ScheduleController } from "./controller.ts";
-import { dateDetail, dateLabel, homeDate, updateLabel } from "./dates.ts";
+import { collectionMoment, dateLabel, homeDate, homeHour, updateLabel } from "./dates.ts";
 import { groupEvents } from "./schedule.ts";
-import { bins, chips, groupRows } from "./presentation.ts";
+import { groupRows, nextCollection, strip } from "./presentation.ts";
 import { strings, sourceMessage } from "./strings.ts";
 import { styles } from "./styles.ts";
 import { createEditor } from "./ha-editor.ts";
@@ -23,6 +23,7 @@ export class WastePickupPlannerCard extends LitElement {
   private controller = new ScheduleController();
   private timer?: ReturnType<typeof setInterval>;
   private day?: string;
+  private hour?: number;
   protected snapshot?: ScheduleSnapshot;
   private visible = () => {
     if (document.visibilityState === "visible") this.refresh();
@@ -113,7 +114,14 @@ export class WastePickupPlannerCard extends LitElement {
   }
   private refresh(): void {
     if (!this.isConnected || !this.ha || !this.config) return;
-    this.day = homeDate(new Date(), this.ha.config.time_zone);
+    const now = new Date();
+    this.day = homeDate(now, this.ha.config.time_zone);
+    // The minute timer re-renders when the evening hour arrives ("Put out tonight").
+    const hour = homeHour(now, this.ha.config.time_zone);
+    if (hour !== this.hour) {
+      this.hour = hour;
+      this.requestUpdate();
+    }
     if (this.snapshot?.rangeStart !== this.day) this.snapshot = undefined;
     void this.controller.update(this.ha, this.config, (value) => {
       // Keep the last visible schedule during a background calendar refresh.
@@ -194,7 +202,12 @@ export class WastePickupPlannerCard extends LitElement {
         ? `${new Intl.NumberFormat(locale).format(next.events.length)} ${t.collections}`
         : next.events.map((e) => e.label).join(" · ")
       : message;
-    const date = next ? dateLabel(next.date, today, locale) : message;
+    const moment = next
+      ? collectionMoment(next.date, today, this.hour ?? 0, this.config.evening_hour ?? 18)
+      : "upcoming";
+    const date = next ? moment === "tonight" ? t.putOutTonight : dateLabel(next.date, today, locale) : message;
+    const showStrip = this.config.show_strip ?? ["hero", "overview"].includes(this.config.layout ?? "compact");
+    const stripDays = Math.min(14, this.config.days_to_show ?? 30);
     const notice =
       state === "stale"
         ? html`<p class="notice" role="status">${t.stale}</p>`
@@ -252,7 +265,8 @@ export class WastePickupPlannerCard extends LitElement {
           ${
             next
               ? this.config.layout === "overview"
-                ? overview({ events, groups, today, locale, artwork: this.config.show_artwork ?? true,
+                ? overview({ events, groups, today, locale, moment, artwork: this.config.show_artwork ?? true,
+                    strip: showStrip ? stripDays : 0,
                     showSource, sources, hass: this.ha, maxGroups: this.config.max_groups!, selected, page: this.binPage,
                     select: key => { this.selectedBin = key; this.detailsPage = 0; }, changePage: page => { this.binPage = page; } })
                 : this.config.layout === "schedule"
@@ -261,23 +275,18 @@ export class WastePickupPlannerCard extends LitElement {
                     today,
                     locale,
                   )
-                : html`<div class="primary">
-                      <div class="copy">
-                        <div class="eyebrow">${t.next}</div>
-                        <span class="date">${date}</span>${chips(next.events, locale)}
-                        <p class="full-date">${dateDetail(next.date, today, locale)}</p>
-                      </div>
-                      ${this.config.layout === "hero" && this.config.show_artwork ? bins(next.events) : nothing}
-                    </div>
+                : html`${nextCollection({ group: next, today, locale, moment,
+                      artwork: this.config.layout === "hero" && Boolean(this.config.show_artwork) })}
+                    ${showStrip ? strip(events, today, locale, stripDays) : nothing}
                     ${this.config.layout === "hero" && groups.length > 1 ? html`<div class="upcoming">${groupRows(groups.slice(1, this.config.max_groups), today, locale)}</div>` : nothing}`
               : html`<p class="state" role="status">${message}</p>`
           }
           ${notice}${state === "unavailable" ? snapshot?.messages.map((m) => html`<p class="state">${sourceMessage(m, locale)}</p>`) : nothing}
           ${this.config.show_updated && snapshot?.fetchedAt ? html`<p class="updated">${t.updated}: ${updateLabel(snapshot.fetchedAt, locale, snapshot.timeZone)}</p>` : nothing}
-          ${this.config.layout === "overview" ? html`<div class=${`source-status ${state}`} role="status">
-            <ha-icon aria-hidden="true" .icon=${state === "ready" ? "mdi:check-circle-outline" : state === "stale" || state === "unavailable" ? "mdi:alert-circle-outline" : "mdi:calendar-outline"}></ha-icon>
-            <span>${state === "ready" ? t.ready : state === "stale" ? t.staleBadge : message}</span>
-          </div><div class="source-links" aria-label=${t.sources}>${sources.map(id => html`<button @click=${() => this.sourceDetails(id)}>${sourceName(this.ha, id, sources)} <span aria-hidden="true">↗</span></button>`)}</div>` : nothing}
+          ${this.config.layout === "overview" ? html`${state === "ready" ? nothing : html`<div class=${`source-status ${state}`} role="status">
+            <ha-icon aria-hidden="true" .icon=${state === "stale" || state === "unavailable" ? "mdi:alert-circle-outline" : "mdi:calendar-outline"}></ha-icon>
+            <span>${state === "stale" ? t.staleBadge : message}</span>
+          </div>`}<div class="source-links" aria-label=${t.sources}>${sources.map(id => html`<button @click=${() => this.sourceDetails(id)}>${sourceName(this.ha, id, sources)} <span aria-hidden="true">↗</span></button>`)}</div>` : nothing}
         </section>
         ${this.config.tap_action?.action === "none" || tappable ? nothing : html`<button class="action" @click=${this.activate}><span>${tapLabel}</span><ha-icon aria-hidden="true" icon="mdi:chevron-right"></ha-icon></button>`}
         ${this.config.show_manage_bins ? html`<button class="action" @click=${this.manageBins}><span>${t.manageBins}</span><ha-icon aria-hidden="true" icon="mdi:cog-outline"></ha-icon></button>` : nothing}</ha-card

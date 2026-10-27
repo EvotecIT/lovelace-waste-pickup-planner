@@ -43,7 +43,10 @@ export function validateConfig(value: CardConfig): CardConfig {
     if (n !== undefined && (!Number.isInteger(n) || n < 1 || n > max))
       throw new Error(`${key} must be 1–${max}.`);
   }
-  for (const key of ["show_artwork", "show_updated", "show_manage_bins", "show_source"] as const)
+  if (value.evening_hour !== undefined &&
+      (!Number.isInteger(value.evening_hour) || value.evening_hour < 0 || value.evening_hour > 23))
+    throw new Error("evening_hour must be a whole hour, 0–23.");
+  for (const key of ["show_artwork", "show_updated", "show_manage_bins", "show_source", "show_strip"] as const)
     if (value[key] !== undefined && typeof value[key] !== "boolean")
       throw new Error(`${key} must be true or false.`);
   if (value.title !== undefined && typeof value.title !== "string")

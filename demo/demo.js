@@ -109,6 +109,9 @@ function hass(state = "ready") {
     callApi: async () => [],
   };
 }
+// `?evening=0` sets evening_hour so the "Put out tonight" state shows at any time of day.
+const evening = new URLSearchParams(location.search).get("evening");
+const eveningConfig = evening !== null && Number.isInteger(Number(evening)) ? { evening_hour: Number(evening) } : {};
 for (const layout of ["overview", "hero", "compact", "schedule", "badge"]) {
   const card = document.createElement(
     layout === "badge"
@@ -121,6 +124,7 @@ for (const layout of ["overview", "hero", "compact", "schedule", "badge"]) {
     layout: layout === "badge" ? "compact" : layout,
     show_artwork: true,
     max_groups: 3,
+    ...eveningConfig,
   });
   document.querySelector(`#${layout}`).append(card);
   card.hass = hass();

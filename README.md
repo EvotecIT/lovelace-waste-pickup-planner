@@ -100,6 +100,8 @@ Both components have visual editors. Advanced YAML uses the same options:
 | `show_artwork` | `true` in overview; `false` otherwise | Decorative bins in hero and overview |
 | `show_updated` | `false` | Display the sensor's provider-backed `last_update` attribute when present |
 | `show_manage_bins` | `false` | Card shortcut to the Waste Collection Schedule integration page |
+| `evening_hour` | `18` | Home-clock hour (0–23) from which the card says “Put out tonight” for tomorrow's bins, and the badge does too |
+| `show_strip` | `true` in hero and overview; `false` otherwise | A strip of the next 14 days with a dot per bin in its colour, so the collection rhythm shows at a glance |
 | `locale` | HA language | Optional language code such as `pl` or `en-GB` |
 | `overrides` | — | Exact collection names/IDs, display names, icons, colors, visibility |
 | `tap_action.action` | `details` | `details`, `more-info`, `navigate`, or `none`; in `compact`, `hero` and `schedule`, tapping anywhere on the card runs it, and `overview` keeps a button because its bin tiles are buttons too |

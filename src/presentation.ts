@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
-import { rowDateLabel, spokenRowDate } from "./dates.ts";
+import { addDays, dateDetail, dateLabel, rowDateLabel, shortDate, spokenRowDate, type CollectionMoment } from "./dates.ts";
 import { strings } from "./strings.ts";
 import { artworkColor } from "./schedule.ts";
 import type { CollectionEvent, DateGroup } from "./types.ts";
@@ -41,14 +41,16 @@ export function iconOn(color: string): string {
  * bin's own colour. Only a colour from the source or the user's customisation counts;
  * others stay neutral rather than guessing from the waste name.
  */
+export const swatch = (e: CollectionEvent) => {
+  const color = artworkColor(e);
+  return html`<span class=${`swatch${color ? "" : " neutral"}`} aria-hidden="true"
+    style=${styleMap(color ? { "--waste-type-color": color, "--waste-icon-color": iconOn(color) } : {})}><ha-icon
+    .icon=${e.icon ?? "mdi:trash-can-outline"}></ha-icon></span>`;
+};
+
 export const chips = (events: CollectionEvent[], locale: string, limit = 6) =>
   html`<div class="chips">
-    ${events.slice(0, limit).map((e) => {
-      const color = artworkColor(e);
-      return html`<span class="chip"><span class=${`swatch${color ? "" : " neutral"}`} aria-hidden="true"
-        style=${styleMap(color ? { "--waste-type-color": color, "--waste-icon-color": iconOn(color) } : {})}><ha-icon
-        .icon=${e.icon ?? "mdi:trash-can-outline"}></ha-icon></span><span>${e.label}</span></span>`;
-    })}
+    ${events.slice(0, limit).map((e) => html`<span class="chip">${swatch(e)}<span>${e.label}</span></span>`)}
     ${events.length > limit ? html`<span class="chip overflow">+${new Intl.NumberFormat(locale).format(events.length - limit)} ${strings(locale).more}</span>` : nothing}
   </div>`;
 export const bins = (events: CollectionEvent[]) =>
@@ -77,7 +79,54 @@ export const bins = (events: CollectionEvent[]) =>
         </div>`,
     )}
   </div>`;
-export const groupRows = (groups: DateGroup[], today: string, locale: string, chipLimit = 6) =>
+/**
+ * The next collection, phrased for the moment: "Put out tonight" from the evening
+ * before, otherwise the date with the one fact it doesn't already say.
+ */
+export const nextCollection = (options: {
+  group: DateGroup; today: string; locale: string; moment: CollectionMoment;
+  artwork: boolean; className?: string;
+}) => {
+  const { group, today, locale, moment } = options;
+  const t = strings(locale);
+  const tonight = moment === "tonight";
+  return html`<div class=${`primary${options.className ? ` ${options.className}` : ""}${tonight ? " tonight" : ""}`}>
+    <div class="copy">
+      <div class="eyebrow">${tonight ? html`<ha-icon aria-hidden="true" icon="mdi:weather-night"></ha-icon>` : nothing}${t.next}</div>
+      <span class="date">${tonight ? t.putOutTonight : dateLabel(group.date, today, locale)}</span>${chips(group.events, locale)}
+      <p class="full-date">${tonight ? `${t.collectedTomorrow} · ${shortDate(group.date, locale)}` : dateDetail(group.date, today, locale)}</p>
+    </div>
+    ${options.artwork ? bins(group.events) : nothing}
+  </div>`;
+};
+
+/**
+ * Fourteen days at a glance, so the rhythm shows (paper every other Tuesday). Each day
+ * shows a dot per bin in the bin's own colour. The schedule rows carry the same dates
+ * as text, so the strip is decorative for assistive technology.
+ */
+export const strip = (events: CollectionEvent[], today: string, locale: string, days = 14) => {
+  const byDate = new Map<string, CollectionEvent[]>();
+  for (const event of events) byDate.set(event.date, [...(byDate.get(event.date) ?? []), event]);
+  const weekday = new Intl.DateTimeFormat(locale, { weekday: "narrow", timeZone: "UTC" });
+  return html`<div class="strip" aria-hidden="true">
+    ${Array.from({ length: days }, (_, index) => {
+      const date = addDays(today, index);
+      const items = byDate.get(date) ?? [];
+      const at = new Date(`${date}T12:00:00Z`);
+      return html`<div class=${`strip-day${index === 0 ? " today" : ""}${items.length ? " has-pickup" : ""}${[0, 6].includes(at.getUTCDay()) ? " weekend" : ""}`}>
+        <span class="strip-weekday">${weekday.format(at)}</span>
+        <span class="strip-date">${at.getUTCDate()}</span>
+        <span class="strip-dots">${items.slice(0, 3).map(e => {
+          const color = artworkColor(e);
+          return html`<span class=${`strip-dot${color ? "" : " neutral"}`} style=${styleMap(color ? { "--waste-type-color": color } : {})}></span>`;
+        })}</span>
+      </div>`;
+    })}
+  </div>`;
+};
+
+export const groupRows =(groups: DateGroup[], today: string, locale: string, chipLimit = 6) =>
   html`${groups.map((group) => {
     const d = new Date(`${group.date}T12:00:00Z`);
     return html`<div class="group">
