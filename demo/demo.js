@@ -127,7 +127,8 @@ for (const layout of ["overview", "hero", "compact", "schedule", "badge"]) {
     ...eveningConfig,
   });
   document.querySelector(`#${layout}`).append(card);
-  card.hass = hass();
+  // `?state=large` (or empty, stale, ...) starts from that fixture, for captures.
+  card.hass = hass(new URLSearchParams(location.search).get("state") ?? "ready");
   cards.push(card);
 }
 document.querySelector("#state").addEventListener("change", (e) => {

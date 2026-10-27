@@ -148,10 +148,13 @@ export const styles = css`
   .strip-date {
     font-size: 12px;
   }
+  /* Dots stack so each day stays one narrow column, whatever the card width. */
   .strip-dots {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 2px;
-    height: 7px;
+    min-height: 25px;
   }
   .strip-dot {
     width: 7px;
@@ -161,6 +164,23 @@ export const styles = css`
   }
   .strip-dot.neutral {
     background: var(--secondary-text-color, #727272);
+  }
+  .strip-more {
+    font-size: 9px;
+    line-height: 7px;
+    color: var(--secondary-text-color, #727272);
+  }
+  .surface.schedule .strip {
+    margin: 0 0 8px;
+  }
+  /* A narrow card shows one week, so each day keeps room for its date. */
+  @container (max-width: 340px) {
+    .strip {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+    .strip-day:nth-child(n + 8) {
+      display: none;
+    }
   }
   .full-date {
     color: var(--secondary-text-color, #727272);
@@ -395,7 +415,7 @@ export const styles = css`
   .bin-tile:hover { background: color-mix(in srgb, currentColor 5%, transparent); }
   .bin-tile .bins { max-width: none; }
   .bin-tile .bin { width: 30px; height: 50px; filter: none; }
-  .bin-tile ha-icon { flex-shrink: 0; color: var(--secondary-text-color, #727272); }
+  .bin-tile > ha-icon { flex-shrink: 0; color: var(--secondary-text-color, #727272); }
   .tile-copy { min-width: 0; }
   .tile-copy strong { display: block; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
   .source-name { display: block; font-size: 11px; line-height: 1.4; color: var(--secondary-text-color, #727272); margin-top: 4px; overflow-wrap: anywhere; }

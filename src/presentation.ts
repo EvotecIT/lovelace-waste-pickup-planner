@@ -108,19 +108,24 @@ export const nextCollection = (options: {
 export const strip = (events: CollectionEvent[], today: string, locale: string, days = 14) => {
   const byDate = new Map<string, CollectionEvent[]>();
   for (const event of events) byDate.set(event.date, [...(byDate.get(event.date) ?? []), event]);
+  // The locale's own calendar and digits, matching the dates in the schedule rows.
   const weekday = new Intl.DateTimeFormat(locale, { weekday: "narrow", timeZone: "UTC" });
+  const dayNumber = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
+  const shown = 3;
   return html`<div class="strip" aria-hidden="true">
     ${Array.from({ length: days }, (_, index) => {
       const date = addDays(today, index);
       const items = byDate.get(date) ?? [];
       const at = new Date(`${date}T12:00:00Z`);
-      return html`<div class=${`strip-day${index === 0 ? " today" : ""}${items.length ? " has-pickup" : ""}${[0, 6].includes(at.getUTCDay()) ? " weekend" : ""}`}>
+      // Dots stack so a day stays one narrow column; more than three bins show "+N".
+      const extra = items.length - shown;
+      return html`<div class=${`strip-day${index === 0 ? " today" : ""}${items.length ? " has-pickup" : ""}`}>
         <span class="strip-weekday">${weekday.format(at)}</span>
-        <span class="strip-date">${at.getUTCDate()}</span>
-        <span class="strip-dots">${items.slice(0, 3).map(e => {
+        <span class="strip-date">${dayNumber.format(at)}</span>
+        <span class="strip-dots">${items.slice(0, extra > 0 ? shown - 1 : shown).map(e => {
           const color = artworkColor(e);
           return html`<span class=${`strip-dot${color ? "" : " neutral"}`} style=${styleMap(color ? { "--waste-type-color": color } : {})}></span>`;
-        })}</span>
+        })}${extra > 0 ? html`<span class="strip-more">+${new Intl.NumberFormat(locale).format(extra + 1)}</span>` : nothing}</span>
       </div>`;
     })}
   </div>`;

@@ -270,11 +270,11 @@ export class WastePickupPlannerCard extends LitElement {
                     showSource, sources, hass: this.ha, maxGroups: this.config.max_groups!, selected, page: this.binPage,
                     select: key => { this.selectedBin = key; this.detailsPage = 0; }, changePage: page => { this.binPage = page; } })
                 : this.config.layout === "schedule"
-                ? groupRows(
+                ? html`${showStrip ? strip(events, today, locale, stripDays) : nothing}${groupRows(
                     groups.slice(0, this.config.max_groups),
                     today,
                     locale,
-                  )
+                  )}`
                 : html`${nextCollection({ group: next, today, locale, moment,
                       artwork: this.config.layout === "hero" && Boolean(this.config.show_artwork) })}
                     ${showStrip ? strip(events, today, locale, stripDays) : nothing}
