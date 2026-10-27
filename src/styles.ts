@@ -31,16 +31,34 @@ export const styles = css`
     padding: 20px;
     position: relative;
   }
-  /* Tapping anywhere on the card opens the schedule, like Home Assistant's own cards. */
-  .surface.tappable {
-    cursor: pointer;
+  /* Tapping anywhere on the card opens the schedule, like Home Assistant's own cards.
+     The button covers the card behind its content; the content lets clicks through. */
+  .surface.tappable > :not(.surface-action) {
+    position: relative;
+    pointer-events: none;
   }
-  .surface.tappable:hover {
+  .surface-action {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .surface-action:hover {
     background: color-mix(in srgb, var(--primary-text-color, #212121) 3%, transparent);
   }
-  .surface.tappable:focus-visible {
+  .surface-action:focus-visible {
     outline: 3px solid var(--primary-color, #03a9f4);
     outline-offset: -3px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .heading {
     display: flex;

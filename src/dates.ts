@@ -76,6 +76,20 @@ export function rowDateLabel(date: string, today: string, locale: string): strin
   return sentence(`${weekday} · ${relativeDay(date, today, locale)}`, locale);
 }
 
+/**
+ * What a screen reader hears for a schedule row: the calendar date the day block shows
+ * visually, plus the distance. "Sunday, 1 November · in 5 days" or "Tomorrow · Wednesday, 28 October".
+ */
+export function spokenRowDate(date: string, today: string, locale: string): string {
+  const full = new Intl.DateTimeFormat(locale, {
+    weekday: "long", day: "numeric", month: "long", timeZone: "UTC",
+  }).format(new Date(`${date}T12:00:00Z`));
+  const distance = daysBetween(today, date);
+  return distance >= 0 && distance <= 1
+    ? `${sentence(relativeDay(date, today, locale), locale)} · ${full}`
+    : `${sentence(full, locale)} · ${relativeDay(date, today, locale)}`;
+}
+
 /** Format an absolute provider timestamp independently of the viewer timezone. */
 export function updateLabel(value: string, locale: string, timeZone: string): string {
   return new Intl.DateTimeFormat(locale, {

@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
-import { rowDateLabel } from "./dates.ts";
+import { rowDateLabel, spokenRowDate } from "./dates.ts";
 import { strings } from "./strings.ts";
 import { artworkColor } from "./schedule.ts";
 import type { CollectionEvent, DateGroup } from "./types.ts";
@@ -16,15 +16,24 @@ function channels(color: string): [number, number, number] | undefined {
   return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : undefined;
 }
 
-/** Dark or white, whichever reads better on the bin's colour; white when it can't be measured. */
-export function iconOn(color: string): string {
-  const rgb = channels(color);
-  if (!rgb) return "#fff";
-  const [r, g, b] = rgb.map(value => {
+const luminance = ([red, green, blue]: [number, number, number]): number => {
+  const [r, g, b] = [red, green, blue].map(value => {
     const c = value / 255;
     return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
   });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#1f1f1f" : "#fff";
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const DARK = "#1f1f1f";
+const DARK_LUMINANCE = luminance([0x1f, 0x1f, 0x1f]);
+
+/** Dark or white, whichever has the higher contrast on the bin's colour; white when it can't be measured. */
+export function iconOn(color: string): string {
+  const rgb = channels(color);
+  if (!rgb) return "#fff";
+  const background = luminance(rgb);
+  const onWhite = 1.05 / (background + 0.05);
+  const onDark = (background + 0.05) / (DARK_LUMINANCE + 0.05);
+  return onDark > onWhite ? DARK : "#fff";
 }
 
 /**
@@ -78,7 +87,8 @@ export const groupRows = (groups: DateGroup[], today: string, locale: string, ch
         >
       </div>
       <div class="group-body">
-        <div class="group-date">${rowDateLabel(group.date, today, locale)}</div>
+        <div class="group-date"><span class="sr-only">${spokenRowDate(group.date, today, locale)}</span><span
+          aria-hidden="true">${rowDateLabel(group.date, today, locale)}</span></div>
         ${chips(group.events, locale, chipLimit)}
       </div>
     </div>`;

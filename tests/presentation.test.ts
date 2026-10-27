@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dateDetail, dateLabel, relativeDay, rowDateLabel, shortDate } from "../src/dates.ts";
+import { dateDetail, dateLabel, relativeDay, rowDateLabel, shortDate, spokenRowDate } from "../src/dates.ts";
 import { iconOn } from "../src/presentation.ts";
 
 const today = "2026-10-27";
@@ -21,10 +21,19 @@ test("schedule rows name the weekday and distance beside the day block", () => {
   assert.equal(relativeDay("2026-11-08", today, "en"), "in 12 days");
 });
 
-test("the bin icon is dark on light colours and white on dark ones", () => {
+test("screen readers hear the row's calendar date as well as its distance", () => {
+  assert.equal(spokenRowDate("2026-11-01", today, "en-GB"), "Sunday 1 November · in 5 days");
+  assert.equal(spokenRowDate("2026-10-28", today, "en-GB"), "Tomorrow · Wednesday 28 October");
+});
+
+test("the bin icon takes whichever of dark or white has more contrast", () => {
   assert.equal(iconOn("#e1b950"), "#1f1f1f");
   assert.equal(iconOn("#fff"), "#1f1f1f");
+  // Mid-tones where a fixed luminance threshold picked white with poor contrast.
+  assert.equal(iconOn("#999999"), "#1f1f1f");
+  assert.equal(iconOn("#aaaa00"), "#1f1f1f");
+  assert.equal(iconOn("rgb(87, 155, 200)"), "#1f1f1f");
   assert.equal(iconOn("#74767b"), "#fff");
-  assert.equal(iconOn("rgb(87, 155, 200)"), "#fff");
+  assert.equal(iconOn("rgb(40, 80, 140)"), "#fff");
   assert.equal(iconOn("var(--brown)"), "#fff");
 });

@@ -154,11 +154,6 @@ export class WastePickupPlannerCard extends LitElement {
         this.renderRoot.querySelector<HTMLDialogElement>("dialog")?.showModal();
     }
   }
-  private activateKey(event: KeyboardEvent): void {
-    if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
-    event.preventDefault();
-    void this.activate();
-  }
   private manageBins(): void {
     history.pushState(null, "", "/config/integrations/integration/waste_collection_schedule");
     window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
@@ -241,15 +236,15 @@ export class WastePickupPlannerCard extends LitElement {
     }
     // Overview has its own buttons (bin filters, sources), so it keeps an explicit
     // schedule button; the other layouts open the schedule from anywhere on the card.
+    // The card's content stays ordinary readable content; a full-size button sits
+    // behind it and takes the clicks, so nothing is hidden inside a button's name.
     const tappable = this.config.tap_action?.action !== "none" && this.config.layout !== "overview";
     const tapLabel = this.config.tap_action?.action === "more-info" || this.config.tap_action?.action === "navigate"
       ? title : t.details;
     return html`<ha-card data-appearance=${this.config.appearance ?? "native"} data-density=${this.config.density ?? "comfortable"}
-        ><section class=${`surface ${this.config.layout}${tappable ? " tappable" : ""}`}
-          role=${tappable ? "button" : nothing} tabindex=${tappable ? "0" : nothing}
-          aria-label=${tappable ? `${tapLabel}: ${next ? `${date}, ${names}` : message}` : nothing}
-          @click=${tappable ? this.activate : nothing}
-          @keydown=${tappable ? this.activateKey : nothing}>
+        ><section class=${`surface ${this.config.layout}${tappable ? " tappable" : ""}`}>
+          ${tappable ? html`<button class="surface-action" @click=${this.activate}>
+            <span class="sr-only">${tapLabel}</span></button>` : nothing}
           ${this.config.title !== undefined ? html`<div class="heading">
             <h2>${title}</h2>
             <ha-icon aria-hidden="true" icon="mdi:calendar-outline"></ha-icon>
