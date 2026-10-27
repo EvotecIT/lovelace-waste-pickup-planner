@@ -27,9 +27,13 @@ export function daysBetween(start: string, end: string): number {
       86400000,
   );
 }
+/** Sentence case for a label that starts a line; month names keep their own case. */
+const sentence = (text: string, locale: string): string =>
+  text.charAt(0).toLocaleUpperCase(locale) + text.slice(1);
+
 export function dateLabel(date: string, today: string, locale: string): string {
   const distance = daysBetween(today, date);
-  return distance <= 1 && distance >= 0
+  return sentence(distance <= 1 && distance >= 0
     ? new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
         distance,
         "day",
@@ -39,7 +43,51 @@ export function dateLabel(date: string, today: string, locale: string): string {
         day: "numeric",
         month: "short",
         timeZone: "UTC",
-      }).format(new Date(`${date}T12:00:00Z`));
+      }).format(new Date(`${date}T12:00:00Z`)), locale);
+}
+
+/** "today", "tomorrow" or "in 5 days" in the card's language. */
+export function relativeDay(date: string, today: string, locale: string): string {
+  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(daysBetween(today, date), "day");
+}
+
+/** "Wed 16 Oct": the calendar date in short form. */
+export function shortDate(date: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "short", day: "numeric", month: "short", timeZone: "UTC",
+  }).format(new Date(`${date}T12:00:00Z`));
+}
+
+/**
+ * The line under the big date adds the fact the big date doesn't say, so a date is
+ * never said twice: "Wed 16 Oct" under "Tomorrow", "in 5 days" under "Sunday, 1 Nov".
+ */
+export function dateDetail(date: string, today: string, locale: string): string {
+  const distance = daysBetween(today, date);
+  return sentence(distance >= 0 && distance <= 1 ? shortDate(date, locale) : relativeDay(date, today, locale), locale);
+}
+
+/** A schedule row already shows the month and day, so it adds the weekday and distance. */
+export function rowDateLabel(date: string, today: string, locale: string): string {
+  const distance = daysBetween(today, date);
+  if (distance >= 0 && distance <= 1) return sentence(relativeDay(date, today, locale), locale);
+  const weekday = new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" })
+    .format(new Date(`${date}T12:00:00Z`));
+  return sentence(`${weekday} · ${relativeDay(date, today, locale)}`, locale);
+}
+
+/**
+ * What a screen reader hears for a schedule row: the calendar date the day block shows
+ * visually, plus the distance. "Sunday, 1 November · in 5 days" or "Tomorrow · Wednesday, 28 October".
+ */
+export function spokenRowDate(date: string, today: string, locale: string): string {
+  const full = new Intl.DateTimeFormat(locale, {
+    weekday: "long", day: "numeric", month: "long", timeZone: "UTC",
+  }).format(new Date(`${date}T12:00:00Z`));
+  const distance = daysBetween(today, date);
+  return distance >= 0 && distance <= 1
+    ? `${sentence(relativeDay(date, today, locale), locale)} · ${full}`
+    : `${sentence(full, locale)} · ${relativeDay(date, today, locale)}`;
 }
 
 /** Format an absolute provider timestamp independently of the viewer timezone. */

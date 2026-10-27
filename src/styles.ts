@@ -31,6 +31,35 @@ export const styles = css`
     padding: 20px;
     position: relative;
   }
+  /* Tapping anywhere on the card opens the schedule, like Home Assistant's own cards.
+     The button covers the card behind its content; the content lets clicks through. */
+  .surface.tappable > :not(.surface-action) {
+    position: relative;
+    pointer-events: none;
+  }
+  .surface-action {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .surface-action:hover {
+    background: color-mix(in srgb, var(--primary-text-color, #212121) 3%, transparent);
+  }
+  .surface-action:focus-visible {
+    outline: 3px solid var(--primary-color, #03a9f4);
+    outline-offset: -3px;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .heading {
     display: flex;
     align-items: center;
@@ -71,11 +100,12 @@ export const styles = css`
     line-height: 1.15;
     font-weight: 650;
     letter-spacing: -0.035em;
-    text-transform: capitalize;
-    overflow-wrap: anywhere;
+    /* Break only a word that can't fit on its own line, never "Tomorrow" mid-word. */
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
   .hero .date {
-    font-size: clamp(28px, 6vw, 38px);
+    font-size: clamp(26px, 8cqi, 38px);
   }
   .full-date {
     color: var(--secondary-text-color, #727272);
@@ -99,10 +129,23 @@ export const styles = css`
   .chip span {
     overflow-wrap: anywhere;
   }
-  .chip ha-icon {
+  /* The bin's colour as a filled circle: what people recognise their bins by. */
+  .swatch {
+    display: inline-grid;
     flex-shrink: 0;
-    --mdc-icon-size: 18px;
-    color: var(--waste-type-color, var(--secondary-text-color, #727272));
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: var(--waste-icon-color, #fff);
+    background: var(--waste-type-color);
+  }
+  .swatch.neutral {
+    color: var(--secondary-text-color, #727272);
+    background: color-mix(in srgb, var(--primary-text-color, #212121) 10%, transparent);
+  }
+  .swatch ha-icon {
+    --mdc-icon-size: 15px;
   }
   .overflow { color: var(--secondary-text-color, #727272); }
   .pages { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -160,13 +203,15 @@ export const styles = css`
     font-size: 13px;
     color: var(--secondary-text-color, #727272);
     margin-bottom: 5px;
-    text-transform: capitalize;
   }
   .upcoming {
     margin-top: 20px;
   }
   .action {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     width: 100%;
     min-height: 44px;
     border: 0;
@@ -180,6 +225,11 @@ export const styles = css`
   }
   .action:hover {
     background: color-mix(in srgb, currentColor 8%, transparent);
+  }
+  .action ha-icon {
+    --mdc-icon-size: 20px;
+    flex-shrink: 0;
+    color: var(--secondary-text-color, #727272);
   }
   .state {
     padding: 12px 0;
@@ -224,7 +274,6 @@ export const styles = css`
   .badge strong {
     display: block;
     font-size: 13px;
-    text-transform: capitalize;
   }
   .badge small {
     display: block;
@@ -295,7 +344,7 @@ export const styles = css`
   .tile-copy { min-width: 0; }
   .tile-copy strong { display: block; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
   .source-name { display: block; font-size: 11px; line-height: 1.4; color: var(--secondary-text-color, #727272); margin-top: 4px; overflow-wrap: anywhere; }
-  .tile-date { display: block; font-size: 12px; margin-top: 8px; text-transform: capitalize; }
+  .tile-date { display: block; font-size: 12px; margin-top: 8px; }
   .tile-color { position: absolute; inset: auto 0 0; height: 3px; }
   .filter-reset { background: transparent; border: 0; color: var(--primary-color, #03a9f4); font-size: 12px; min-height: 44px; padding: 8px; }
   .source-status { display: flex; align-items: center; gap: 8px; margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--divider-color, #ddd);

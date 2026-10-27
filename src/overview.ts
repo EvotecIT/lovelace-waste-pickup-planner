@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
 import { binKey, binName, nextBins, sourceName } from "./collections.ts";
-import { dateLabel } from "./dates.ts";
+import { dateDetail, dateLabel } from "./dates.ts";
 import { artworkColor } from "./schedule.ts";
 import { bins, chips, groupRows } from "./presentation.ts";
 import { strings } from "./strings.ts";
@@ -23,7 +23,7 @@ export function overview(options: {
   return html`
     ${next ? html`<div class="primary overview-next"><div class="copy"><div class="eyebrow">${t.next}</div>
       <span class="date">${dateLabel(next.date, today, locale)}</span>${chips(next.events, locale)}
-      <p class="full-date">${new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${next.date}T12:00:00Z`))}</p>
+      <p class="full-date">${dateDetail(next.date, today, locale)}</p>
     </div>${options.artwork ? bins(next.events) : nothing}</div>` : nothing}
     <div class="section-heading"><h3>${t.yourBins}</h3><small>${new Intl.NumberFormat(locale).format(inventory.length)}</small></div>
     <p class="filter-hint">${t.filterHint}</p>

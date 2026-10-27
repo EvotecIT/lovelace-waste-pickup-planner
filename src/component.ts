@@ -1,7 +1,7 @@
 import { LitElement, html, nothing } from "lit";
 import { sourceIds, validateConfig } from "./config.ts";
 import { ScheduleController } from "./controller.ts";
-import { dateLabel, homeDate, updateLabel } from "./dates.ts";
+import { dateDetail, dateLabel, homeDate, updateLabel } from "./dates.ts";
 import { groupEvents } from "./schedule.ts";
 import { bins, chips, groupRows } from "./presentation.ts";
 import { strings, sourceMessage } from "./strings.ts";
@@ -234,12 +234,21 @@ export class WastePickupPlannerCard extends LitElement {
         ? html`<div class="badge" role="img" aria-label=${label} title=${description}>${content}</div>`
         : html`<button class="badge" aria-label=${label} title=${description} @click=${this.activate}>${content}</button>${details}`;
     }
+    // Overview has its own buttons (bin filters, sources), so it keeps an explicit
+    // schedule button; the other layouts open the schedule from anywhere on the card.
+    // The card's content stays ordinary readable content; a full-size button sits
+    // behind it and takes the clicks, so nothing is hidden inside a button's name.
+    const tappable = this.config.tap_action?.action !== "none" && this.config.layout !== "overview";
+    const tapLabel = this.config.tap_action?.action === "more-info" || this.config.tap_action?.action === "navigate"
+      ? title : t.details;
     return html`<ha-card data-appearance=${this.config.appearance ?? "native"} data-density=${this.config.density ?? "comfortable"}
-        ><section class=${`surface ${this.config.layout}`}>
-          <div class="heading">
+        ><section class=${`surface ${this.config.layout}${tappable ? " tappable" : ""}`}>
+          ${tappable ? html`<button class="surface-action" @click=${this.activate}>
+            <span class="sr-only">${tapLabel}</span></button>` : nothing}
+          ${this.config.title !== undefined ? html`<div class="heading">
             <h2>${title}</h2>
             <ha-icon aria-hidden="true" icon="mdi:calendar-outline"></ha-icon>
-          </div>
+          </div>` : nothing}
           ${
             next
               ? this.config.layout === "overview"
@@ -256,9 +265,7 @@ export class WastePickupPlannerCard extends LitElement {
                       <div class="copy">
                         <div class="eyebrow">${t.next}</div>
                         <span class="date">${date}</span>${chips(next.events, locale)}
-                        <p class="full-date">
-                          ${new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${next.date}T12:00:00Z`))}
-                        </p>
+                        <p class="full-date">${dateDetail(next.date, today, locale)}</p>
                       </div>
                       ${this.config.layout === "hero" && this.config.show_artwork ? bins(next.events) : nothing}
                     </div>
@@ -272,8 +279,8 @@ export class WastePickupPlannerCard extends LitElement {
             <span>${state === "ready" ? t.ready : state === "stale" ? t.staleBadge : message}</span>
           </div><div class="source-links" aria-label=${t.sources}>${sources.map(id => html`<button @click=${() => this.sourceDetails(id)}>${sourceName(this.ha, id, sources)} <span aria-hidden="true">↗</span></button>`)}</div>` : nothing}
         </section>
-        ${this.config.tap_action?.action === "none" ? nothing : html`<button class="action" @click=${this.activate}>${this.config.tap_action?.action === "more-info" ? title : t.details} <span aria-hidden="true">↗</span></button>`}
-        ${this.config.show_manage_bins ? html`<button class="action" @click=${this.manageBins}>${t.manageBins} <span aria-hidden="true">⚙</span></button>` : nothing}</ha-card
+        ${this.config.tap_action?.action === "none" || tappable ? nothing : html`<button class="action" @click=${this.activate}><span>${tapLabel}</span><ha-icon aria-hidden="true" icon="mdi:chevron-right"></ha-icon></button>`}
+        ${this.config.show_manage_bins ? html`<button class="action" @click=${this.manageBins}><span>${t.manageBins}</span><ha-icon aria-hidden="true" icon="mdi:cog-outline"></ha-icon></button>` : nothing}</ha-card
       >${details}`;
   }
 }
