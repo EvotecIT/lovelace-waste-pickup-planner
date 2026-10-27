@@ -204,7 +204,8 @@ const capture = new URLSearchParams(location.search).get("capture");
 const captured = capture && document.querySelector(`#${CSS.escape(capture)} > *`);
 if (captured) {
   const frame = document.createElement("div");
-  frame.style.cssText = `width:${Number(new URLSearchParams(location.search).get("width")) || 420}px;padding:16px`;
+  const width = Number(new URLSearchParams(location.search).get("width"));
+  frame.style.cssText = `width:${Number.isFinite(width) && width > 0 ? width : 420}px;padding:16px`;
   frame.append(captured);
   document.body.replaceChildren(frame);
   document.body.style.cssText = "margin:0;padding:0;max-width:none";
