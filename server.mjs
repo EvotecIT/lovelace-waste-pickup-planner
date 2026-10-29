@@ -8,7 +8,7 @@ const files = new Map([
     ["waste-pickup-planner-card.js", "application/javascript"],
   ],
 ]);
-createServer((request, response) => {
+const server = createServer((request, response) => {
   if (request.url === "/favicon.ico") {
     response.writeHead(204);
     response.end();
@@ -27,6 +27,6 @@ createServer((request, response) => {
   const stream = createReadStream(file[0]);
   stream.on("error", () => response.end());
   stream.pipe(response);
-}).listen(Number(process.env.PORT ?? 4174), "127.0.0.1", () =>
-  console.log("Waste Pickup Planner preview: http://127.0.0.1:4174"),
-);
+}).listen(Number(process.env.PORT ?? 4174), "127.0.0.1", () => {
+  console.log(`Waste Pickup Planner preview: http://127.0.0.1:${server.address().port}`);
+});

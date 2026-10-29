@@ -16,14 +16,14 @@ build, or supported HA changes.
 | Area | Required evidence | Current evidence and remaining work |
 | --- | --- | --- |
 | Data contracts | Preserve complete labels, source identity, all-day dates, home timezone, overrides, and provider timestamps. Exercise malformed and bounded inputs. | `tests/schedule.test.ts` covers the core contracts. Expand malformed calendar and sensor boundary cases where they affect displayed status. |
-| Availability | Distinguish loading, empty, unavailable, and stale results. Retain last-known data only for the same connection and source configuration. | Controller tests cover outages, recovery, connection/timezone changes, and pending-response fencing. Browser state transitions remain to be automated. |
+| Availability | Distinguish loading, empty, unavailable, and stale results. Retain last-known data only for the same connection and source configuration. | Controller tests cover outages, recovery, connection/timezone changes, and pending-response fencing. The current packaged-browser matrix checks localized empty, unavailable and stale messages in all four layouts. The complete installed-host transition matrix remains open. |
 | Resource lifetime | Repeated attachment/removal and editor changes release timers/listeners, suppress obsolete results, and keep request volume bounded. | Calendar-cache tests cover shared requests, expiry, revalidation, and pressure. The packaged-browser check below covers repeated attachment/removal, timer/listener release, pending-response fencing, and reopening. Heap retention and installed-HA lifecycle measurements remain open. |
 | Types | Strict checking of every production TypeScript module. | `npm run check` uses `strict: true` and includes all `src/**/*.ts`. Dependency declaration checking is skipped; this is not a claim about third-party type quality. |
 | Tests | Meaningful unit coverage of data contracts plus browser coverage of components and editors. Report the measured denominator. | The Node suite exercises seven data/localization modules. It does not import components, editors, presentation, or styles, so its coverage percentage is not whole-product coverage. |
-| Accessibility | Keyboard-only activation, dialog focus containment and restoration, Escape dismissal, accessible names, readable contrast, zoom/reflow, and non-color status cues. | Preview checks cover Enter activation, Tab/Shift+Tab modal navigation, keyboard pagination across 125 collections, visible focus at 360-pixel width, and Escape focus restoration. Native modal behavior keeps background controls out of the active accessibility tree. Selected text contrast is measured below. Automated browser assertions, the full contrast/zoom matrix, other browser engines, and assistive-technology checks remain open. |
-| Responsive layout | Compact, hero, schedule, badge, and dialog at narrow/wide widths and short landscape height; complete long labels and overflow navigation. | The standalone preview supplies representative layouts and long labels. Automate the viewport matrix and verify it in HA. |
+| Accessibility | Keyboard-only activation, dialog focus containment and restoration, Escape dismissal, accessible names, readable contrast, zoom/reflow, and non-color status cues. | Automated packaged-preview and HA 2026.10.1 checks cover Enter activation, enabled-control Tab/Shift+Tab navigation, both dialog pages across 125 collections, visible header focus and first collection, and Escape opener restoration. Selected text contrast is measured below. A maintained browser CI gate, the full contrast/zoom matrix, other browser engines and assistive-technology checks remain open. |
+| Responsive layout | Compact, hero, schedule, badge, and dialog at narrow/wide widths and short landscape height; complete long labels and overflow navigation. | The packaged preview covers 36 viewport/language/state combinations and inspected long-label/theme captures. Native HA checks cover card/badge dialogs at all three viewport sizes and visual editors at desktop/narrow widths. The complete native layout/theme matrix remains open. |
 | Themes and localization | Light, dark, and custom themes; English/Polish labels; dates independent of viewer timezone; no untranslated user-facing errors in supported languages. | Date tests cover home timezone, DST, and localized provider timestamps. Source failures use translated reasons rather than upstream error text. Preview checks cover an existing error switching from English to Polish, narrow dark cards and a wide light dialog. Full theme/localization and installed-HA checks remain open. |
-| Configuration | YAML and visual editors round-trip supported options, preserve unknown supported values, reject unsafe input, and report actionable errors. | Config validation has focused tests. HA editor round-trip and invalid-input interaction proof remain open. |
+| Configuration | YAML and visual editors round-trip supported options, preserve unknown supported values, reject unsafe input, and report actionable errors. | Config validation has focused tests. Actual HA 2026.10.1 card and badge editors save and reopen title edits while preserving selected entity/type/layout and implicit defaults. The complete option/invalid-input interaction matrix remains open. |
 | Privacy and security | No provider credentials, external artwork requests, template execution, or unsafe navigation; bounded source inputs and no sensitive diagnostic leakage. | Adapters and config validation constrain inputs; the bundle includes artwork. Browser network inspection and dependency/artifact audit remain open. |
 | Compatibility | Verify the declared minimum HA version, current stable HA, and supported desktop/mobile browser engines. Record beta results separately. | `hacs.json` declares HA 2026.9.1. Installed-host and cross-browser qualification remain open. |
 | Delivery | Build from the lockfile, keep the committed HACS resource identical to source output, verify the packed payload, and install the actual release artifact. | CI runs tests, type checking, packing, and a generated-resource diff check. Published-artifact installation and upgrade proof remain open. |
@@ -73,7 +73,7 @@ badge in each relevant combination:
   navigation against the actual HA host.
 
 The preview's **125 collections** fixture exercises bin pages and both dialog pages. The first
-page contains collections 001â€“100 and the second contains 101â€“125. Use the
+page contains collections 001–100 and the second contains 101–125. Use the
 independent language selector to inspect each state in English and Polish.
 
 ### Measured preview text contrast
@@ -127,6 +127,69 @@ These observations cover the measured timer/listener ownership and rendered resu
 of the shipped bundle. They do not measure garbage collection or total retained
 heap, prove cancellation of HA's shared HTTP transport, or qualify installed HA,
 other browser engines, editor changes, or an upgrade from a published release.
+
+## Keyboard focus qualification
+
+On 18 October 2026, the built resource with SHA-256
+`314BF2DE817D5E27DD90E9A9542E15CD4351B4D760AEFA67A319CEDDE3A85D17`
+passed automated checks in Chrome 155.0.8059.80 on Windows. The disposable
+qualification runner used the published HtmlTinkerX 3.0.5 browser owner.
+
+- A dialog containing only its Close button keeps focus on that button through
+  Tab and Shift+Tab. Escape returns focus to the card's opening control.
+- The card and badge's 125-collection dialogs wrap focus between enabled controls.
+  Changing pages starts at the first collection and focuses the visible Close
+  button in the header. Both page transitions were checked at 1280 × 900,
+  360 × 800 and 760 × 360: the dialog scroll position is zero and the first
+  collection and focused control remain visible. Escape restores the opener.
+- All four card layouts show the expected English and Polish messages for empty,
+  unavailable and stale schedules. The 36-state matrix combines those languages
+  with six schedule fixtures at 1280 × 900, 360 × 800 and 760 × 360. No state
+  overflows the page horizontally. Desktop focus, narrow long-label, short
+  landscape, light-theme and custom-theme screenshots were also inspected.
+- Twenty attachment/removal cycles each for the card and badge leave no measured
+  intervals or document visibility listeners after removal. Each attached
+  instance owns one of each. This does not measure garbage collection or heap
+  retention.
+- The browser reported no errors. Its observed requests were confined to the
+  local preview and its two JavaScript resources.
+
+The same resource was served by an isolated HA 2026.10.1 instance with a synthetic
+125-collection storage dashboard. All twelve card/badge page transitions across
+the three viewport sizes preserve the first collection, visible Close focus,
+enabled-control navigation and Escape restoration in the actual HA frontend.
+The ordinary card and badge visual editors save and reopen title edits without
+changing source/type/layout or materializing implicit defaults. Card editing uses
+the normal pointer control; badge editing covers keyboard activation and the
+normal hover-and-click control. Desktop and narrow editor captures were inspected.
+These native checks use English and the default light theme and report no browser
+errors; they do not qualify the complete editor-option or native theme matrix.
+
+The keyboard fix uses the same dialog implementation for cards and badges.
+These observations qualify the stated packaged-preview and synthetic HA host
+contracts. Minimum-version checks, other browser engines, zoom/assistive-technology
+coverage, published-artifact upgrades and retained-heap measurements remain
+separate acceptance work. Browser checks are not yet a maintained CI gate.
+
+### Requalification after the layout changes
+
+On 29 October 2026, the rebuilt resource with SHA-256
+`3332e453230c8429b5d7ebed570f757b45bd8789c35ef824b32232a610b7dcb1`
+passed the same 36-state packaged-preview matrix in Chromium 156.0.8078.48
+and WebKit 26.6. Each engine checked twelve card/badge page transitions,
+enabled-control focus wrapping, Escape restoration and forty attachment/removal
+cycles, with no browser errors or external preview requests. Light/dark native
+controls, long labels and narrow dialog captures were inspected.
+
+The same resource passed all twelve keyboard page transitions in an isolated
+HA 2026.10.1 frontend using a synthetic 125-collection storage dashboard at
+1280 × 900, 360 × 800 and 760 × 360. The focused Close control and first
+collection remain visible when either page opens; disabled page controls are
+skipped and Escape restores the opener. Native card and badge captures were
+inspected and the browser reported no errors. All 54 unit tests, strict
+TypeScript checking and release packing also pass. This refresh covers the
+keyboard fixes on the later layouts; it does not extend the older editor,
+published-upgrade, retained-heap or assistive-technology evidence.
 
 ## Native Home Assistant bin controls
 

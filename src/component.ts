@@ -172,7 +172,22 @@ export class WastePickupPlannerCard extends LitElement {
   private async changeDetailsPage(page: number): Promise<void> {
     this.detailsPage = page;
     await this.updateComplete;
-    this.renderRoot.querySelector("dialog")?.scrollTo(0, 0);
+    const dialog = this.renderRoot.querySelector<HTMLDialogElement>("dialog");
+    // Start each page at its content with a visible keyboard target in the header.
+    dialog?.querySelector<HTMLButtonElement>(".close")?.focus({ preventScroll: true });
+    dialog?.scrollTo(0, 0);
+  }
+  private keepDetailsFocus(event: KeyboardEvent): void {
+    if (event.key !== "Tab") return;
+    const dialog = event.currentTarget as HTMLDialogElement;
+    const controls = Array.from(dialog.querySelectorAll<HTMLButtonElement>("button:not([disabled])"));
+    const first = controls[0], last = controls[controls.length - 1];
+    if (!first || !last) return;
+    const focused = (dialog.getRootNode() as Document | ShadowRoot).activeElement;
+    if ((event.shiftKey && focused === first) || (!event.shiftKey && focused === last)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    }
   }
   protected render() {
     if (!this.config) return nothing;
@@ -216,7 +231,7 @@ export class WastePickupPlannerCard extends LitElement {
     const pageSize = 100;
     const pageCount = Math.max(1, Math.ceil(detailEvents.length / pageSize));
     const page = Math.min(this.detailsPage, pageCount - 1);
-    const details = this.detailsOpen ? html`<dialog aria-label=${t.schedule} @close=${() => { this.detailsOpen = false; }}>
+    const details = this.detailsOpen ? html`<dialog aria-label=${t.schedule} @keydown=${this.keepDetailsFocus} @close=${() => { this.detailsOpen = false; }}>
       <div class="heading">
         <h2>${title}</h2>
         <button
