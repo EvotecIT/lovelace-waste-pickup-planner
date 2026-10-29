@@ -1,4 +1,4 @@
-# Waste Pickup Planner
+# Waste Pickup Planner for Home Assistant
 
 ![Waste Pickup Planner for Home Assistant](assets/waste-pickup-planner-social.jpg)
 
@@ -6,6 +6,8 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/EvotecIT/lovelace-waste-pickup-planner/validate.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/EvotecIT/lovelace-waste-pickup-planner/actions/workflows/validate.yml)
 [![License](https://img.shields.io/github/license/EvotecIT/lovelace-waste-pickup-planner?style=for-the-badge)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/EvotecIT/lovelace-waste-pickup-planner?style=for-the-badge)](https://github.com/EvotecIT/lovelace-waste-pickup-planner/stargazers)
+
+Requires **Home Assistant 2026.9.1 or newer**.
 
 ## Overview
 
@@ -87,6 +89,20 @@ type: module
 ### Manual installation
 
 Download `waste-pickup-planner-card.js` from [Releases](https://github.com/EvotecIT/lovelace-waste-pickup-planner/releases), copy it to `config/www/waste-pickup-planner-card.js`, and add `/local/waste-pickup-planner-card.js` as a JavaScript module in **Settings → Dashboards → Resources**. One file registers both the card and badge. No additional artwork files are required.
+
+## First dashboard setup
+
+1. Have a [supported sensor or calendar](#choose-a-source) ready. Install and
+   configure its data integration separately; this card displays existing HA data.
+2. Open a dashboard and choose **Edit dashboard → Add card**. Search for
+   **Waste Pickup Planner**.
+3. Select the source, choose a layout, and save. Start with one source so the
+   first displayed collection is easy to compare with its sensor or calendar.
+4. To add a badge, use the dashboard's **Add badge** picker and choose
+   **Waste Pickup Planner Badge**, then select the same source and save.
+
+Both components have visual editors; YAML is optional. If no supported source
+appears, follow the source setup below before adding more entities.
 
 ## Choose a source
 
@@ -252,6 +268,38 @@ entities:
 ```
 
 Native cards display the sensor's own state. They do not gain this card's grouping or color logic.
+
+## Documentation
+
+| I want to… | Guide |
+| --- | --- |
+| Add my first card or badge | [First dashboard setup](#first-dashboard-setup) |
+| Choose a sensor or calendar | [Source setup](#choose-a-source) |
+| Choose a layout or look up an option | [Layouts](#layouts) · [Configuration](#configuration) |
+| Check accepted source data and compatibility | [Data and API reference](docs/design-and-api.md) |
+| Check validation and remaining quality work | [Quality qualification](docs/quality.md) |
+| Build or contribute | [Development](#development) |
+
+## Removal
+
+1. Remove Waste Pickup Planner cards and badges from dashboards that use them.
+2. Uninstall the project through **Settings → Marketplace** on HA 2026.11 or
+   newer, or through HACS on older HA versions. For a manual installation,
+   remove its resource declaration and `config/www/waste-pickup-planner-card.js`.
+3. Check **Edit dashboard → Manage resources** for an obsolete resource entry.
+   YAML-mode resources must be removed where they were declared. Close and
+   reopen Home Assistant browser tabs and app windows to unload the module.
+
+The single JavaScript resource registers both the card and badge. Removing it
+leaves the source integration, sensors, calendars, and collection data in place.
+
+## Support
+
+[Report an issue](https://github.com/EvotecIT/lovelace-waste-pickup-planner/issues)
+with the card version, Home Assistant version, browser, selected source type,
+layout, and steps to reproduce. Include a minimal configuration and a sanitized
+example of the source data when relevant. Remove private addresses, calendar
+content, entity names, and URLs before posting.
 
 ## Development
 
