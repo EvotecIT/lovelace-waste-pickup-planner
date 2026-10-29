@@ -7,46 +7,29 @@
 [![License](https://img.shields.io/github/license/EvotecIT/lovelace-waste-pickup-planner?style=for-the-badge)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/EvotecIT/lovelace-waste-pickup-planner?style=for-the-badge)](https://github.com/EvotecIT/lovelace-waste-pickup-planner/stargazers)
 
-Requires **Home Assistant 2026.9.1 or newer**.
 
-## Overview
-
-Waste collection dates for Home Assistant, grouped by day. Choose a bin overview, a compact card, a hero with optional bin illustrations, a schedule list, or a dashboard badge.
-
-The artwork above is illustrative. The card in Home Assistant looks like this:
+Never miss bin day. See which bins go out next, color-coded and grouped by
+date, right on your Home Assistant dashboard.
 
 ![Waste Pickup Planner bin overview in Home Assistant](assets/overview-native-dark.png)
 
-The card reads Home Assistant sensors and calendars. It does not contact municipality services, need another account, or control physical devices.
+*The real card in Home Assistant. The banner above is artwork.*
 
-See [quality qualification](docs/quality.md) for the card's acceptance criteria,
-reproducible checks, and remaining evidence gaps.
+## What you get
 
-## Sponsor
+- **Every bin at a glance:** the next pickup, each bin's next date, and a
+  schedule you can filter by bin.
+- **Pick the size that fits:** a full overview, a compact card, a hero with bin
+  illustrations, a plain schedule list, or a small dashboard badge.
+- **Your bins, your colors:** use the colors from your waste integration, or pick
+  your own per bin in the visual editor.
+- **Uses what you already have:** reads your
+  [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule)
+  sensor or any Home Assistant calendar. No extra account, and nothing is sent
+  to your council.
+- **Set up in the visual editor.** YAML is optional.
 
-Support development and maintenance through
-[GitHub Sponsors](https://github.com/sponsors/PrzemyslawKlys).
-Sponsorship is optional; these projects remain open source.
-
-## More for your Home Assistant home
-
-Other integrations and dashboards we maintain:
-
-- [Dreame & MOVA mowers](https://github.com/EvotecIT/homeassistant-dreamelawnmower) — Mowing controls, maps, schedules, and supported cameras.
-- [Lawn Mower Card](https://github.com/EvotecIT/lovelace-lawn-mower-card) — A dashboard for mower state, maps, and controls.
-- [KEF](https://github.com/EvotecIT/homeassistant-kef) — Local control for modern and legacy speaker families.
-- [Devialet](https://github.com/EvotecIT/homeassistant-devialet) — Local speaker control, with Dione support.
-- [Siegenia](https://github.com/EvotecIT/homeassistant-siegenia) — Local control for supported window controllers.
-- [EasyControlX](https://github.com/EvotecIT/homeassistant-easycontrolx) — Connect supported Windows and macOS hosts.
-
-For a native app connected to the same Home Assistant setup:
-
-- [CasaRay](https://casaray.dev/) — rooms, devices, cameras, and home activity on
-  iPhone, iPad, and Mac.
-- [Tactra Remote](https://tactra.dev/) — media players, speakers, and TV controls
-  on iPhone, iPad, Apple Watch, and Mac.
-
-Neither app is required to use this project.
+Requires **Home Assistant 2026.9.1 or newer**.
 
 ## Installation
 
@@ -317,6 +300,32 @@ The standalone preview runs at `http://127.0.0.1:4174` with synthetic data, them
 
 `src/` separates input adapters, calendar-date calculations, shared projection/controller, rendering, and visual editors. `tests/` covers the sensor/calendar contracts and lifecycle behavior. The one-file build uses Lit and esbuild. Releases use the same shared PowerForge Home Assistant workflow as [Lawn Mower Card](https://github.com/EvotecIT/lovelace-lawn-mower-card).
 
-See [architecture and compatibility](docs/design-and-api.md) for the tested data boundaries. Concept images in `docs/design/` are design references, not application screenshots.
+See [architecture and compatibility](docs/design-and-api.md) for the tested data boundaries, and [quality qualification](docs/quality.md) for acceptance criteria, reproducible checks, and remaining evidence gaps. Concept images in `docs/design/` are design references, not application screenshots.
 
 MIT license.
+
+## Sponsor
+
+Support development and maintenance through
+[GitHub Sponsors](https://github.com/sponsors/PrzemyslawKlys).
+Sponsorship is optional; these projects remain open source.
+
+## More for your Home Assistant home
+
+Other integrations and dashboards we maintain:
+
+- [Dreame & MOVA mowers](https://github.com/EvotecIT/homeassistant-dreamelawnmower) — Mowing controls, maps, schedules, and supported cameras.
+- [Lawn Mower Card](https://github.com/EvotecIT/lovelace-lawn-mower-card) — A dashboard for mower state, maps, and controls.
+- [KEF](https://github.com/EvotecIT/homeassistant-kef) — Local control for modern and legacy speaker families.
+- [Devialet](https://github.com/EvotecIT/homeassistant-devialet) — Local speaker control, with Dione support.
+- [Siegenia](https://github.com/EvotecIT/homeassistant-siegenia) — Local control for supported window controllers.
+- [EasyControlX](https://github.com/EvotecIT/homeassistant-easycontrolx) — Connect supported Windows and macOS hosts.
+
+For a native app connected to the same Home Assistant setup:
+
+- [CasaRay](https://casaray.dev/) — rooms, devices, cameras, and home activity on
+  iPhone, iPad, and Mac.
+- [Tactra Remote](https://tactra.dev/) — media players, speakers, and TV controls
+  on iPhone, iPad, Apple Watch, and Mac.
+
+Neither app is required to use this project.
