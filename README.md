@@ -1,6 +1,17 @@
 # Waste Pickup Planner
 
+![Waste Pickup Planner for Home Assistant](assets/waste-pickup-planner-social.jpg)
+
+[![Marketplace Catalog](https://img.shields.io/badge/Marketplace-Catalog-41BDF5.svg?style=for-the-badge)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=EvotecIT&repository=lovelace-waste-pickup-planner&category=plugin)
+[![CI](https://img.shields.io/github/actions/workflow/status/EvotecIT/lovelace-waste-pickup-planner/validate.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/EvotecIT/lovelace-waste-pickup-planner/actions/workflows/validate.yml)
+[![License](https://img.shields.io/github/license/EvotecIT/lovelace-waste-pickup-planner?style=for-the-badge)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/EvotecIT/lovelace-waste-pickup-planner?style=for-the-badge)](https://github.com/EvotecIT/lovelace-waste-pickup-planner/stargazers)
+
+## Overview
+
 Waste collection dates for Home Assistant, grouped by day. Choose a bin overview, a compact card, a hero with optional bin illustrations, a schedule list, or a dashboard badge.
+
+The artwork above is illustrative. The card in Home Assistant looks like this:
 
 ![Waste Pickup Planner bin overview in Home Assistant](assets/overview-native-dark.png)
 
@@ -9,11 +20,58 @@ The card reads Home Assistant sensors and calendars. It does not contact municip
 See [quality qualification](docs/quality.md) for the card's acceptance criteria,
 reproducible checks, and remaining evidence gaps.
 
-## Install
+## Sponsor
 
-### HACS
+Support development and maintenance through
+[GitHub Sponsors](https://github.com/sponsors/PrzemyslawKlys).
+Sponsorship is optional; these projects remain open source.
+
+## More for your Home Assistant home
+
+Other integrations and dashboards we maintain:
+
+- [Dreame & MOVA mowers](https://github.com/EvotecIT/homeassistant-dreamelawnmower) — Mowing controls, maps, schedules, and supported cameras.
+- [Lawn Mower Card](https://github.com/EvotecIT/lovelace-lawn-mower-card) — A dashboard for mower state, maps, and controls.
+- [KEF](https://github.com/EvotecIT/homeassistant-kef) — Local control for modern and legacy speaker families.
+- [Devialet](https://github.com/EvotecIT/homeassistant-devialet) — Local speaker control, with Dione support.
+- [Siegenia](https://github.com/EvotecIT/homeassistant-siegenia) — Local control for supported window controllers.
+- [EasyControlX](https://github.com/EvotecIT/homeassistant-easycontrolx) — Connect supported Windows and macOS hosts.
+
+For a native app connected to the same Home Assistant setup:
+
+- [CasaRay](https://casaray.dev/) — rooms, devices, cameras, and home activity on
+  iPhone, iPad, and Mac.
+- [Tactra Remote](https://tactra.dev/) — media players, speakers, and TV controls
+  on iPhone, iPad, Apple Watch, and Mac.
+
+Neither app is required to use this project.
+
+## Installation
+
+### Home Assistant 2026.11 and newer
+
+[![Open this repository in the Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=EvotecIT&repository=lovelace-waste-pickup-planner&category=plugin)
+
+1. Open **Settings → Marketplace** and search for **Waste Pickup Planner**.
+2. Open the project and select **Install**.
+3. Reload your browser, then add **Waste Pickup Planner** to your dashboard.
+
+If the project is missing from your catalog, choose **Add from link** and enter
+`https://github.com/EvotecIT/lovelace-waste-pickup-planner`. Adding a custom repository
+requires a GitHub connection.
+
+The Marketplace registers the dashboard resource automatically. If you manage
+resources manually, use `/local/community/lovelace-waste-pickup-planner/waste-pickup-planner-card.js`
+as a JavaScript module. Existing `/hacsfiles/` URLs continue to work.
+
+Existing HACS installations migrate automatically when Home Assistant upgrades
+to 2026.11. The repository metadata remains in `hacs.json`.
+
+### Home Assistant 2026.10 and older: HACS
 
 1. Open **HACS** in Home Assistant and search for **Waste Pickup Planner**.
+   If it is missing, add `https://github.com/EvotecIT/lovelace-waste-pickup-planner`
+   in **Custom repositories**, with type **Dashboard**.
 2. Open its details and select **Download**.
 3. Reload your browser after installation.
 
