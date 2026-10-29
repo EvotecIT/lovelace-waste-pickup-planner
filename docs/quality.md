@@ -128,7 +128,7 @@ of the shipped bundle. They do not measure garbage collection or total retained
 heap, prove cancellation of HA's shared HTTP transport, or qualify installed HA,
 other browser engines, editor changes, or an upgrade from a published release.
 
-## Keyboard focus and current packaged preview
+## Keyboard focus qualification
 
 On 18 October 2026, the built resource with SHA-256
 `314BF2DE817D5E27DD90E9A9542E15CD4351B4D760AEFA67A319CEDDE3A85D17`
@@ -170,6 +170,26 @@ These observations qualify the stated packaged-preview and synthetic HA host
 contracts. Minimum-version checks, other browser engines, zoom/assistive-technology
 coverage, published-artifact upgrades and retained-heap measurements remain
 separate acceptance work. Browser checks are not yet a maintained CI gate.
+
+### Requalification after the layout changes
+
+On 29 October 2026, the rebuilt resource with SHA-256
+`3332e453230c8429b5d7ebed570f757b45bd8789c35ef824b32232a610b7dcb1`
+passed the same 36-state packaged-preview matrix in Chromium 156.0.8078.48
+and WebKit 26.6. Each engine checked twelve card/badge page transitions,
+enabled-control focus wrapping, Escape restoration and forty attachment/removal
+cycles, with no browser errors or external preview requests. Light/dark native
+controls, long labels and narrow dialog captures were inspected.
+
+The same resource passed all twelve keyboard page transitions in an isolated
+HA 2026.10.1 frontend using a synthetic 125-collection storage dashboard at
+1280 × 900, 360 × 800 and 760 × 360. The focused Close control and first
+collection remain visible when either page opens; disabled page controls are
+skipped and Escape restores the opener. Native card and badge captures were
+inspected and the browser reported no errors. All 54 unit tests, strict
+TypeScript checking and release packing also pass. This refresh covers the
+keyboard fixes on the later layouts; it does not extend the older editor,
+published-upgrade, retained-heap or assistive-technology evidence.
 
 ## Native Home Assistant bin controls
 
