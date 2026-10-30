@@ -1,0 +1,121 @@
+blueprint:
+  name: Put the bins out
+  description: >-
+    Reminds you on your phone before a waste pickup and names the bins, read
+    from your waste calendar (Waste Collection Schedule creates one). Tap Done
+    on the notification to stop the repeats.
+  domain: automation
+  source_url: https://github.com/EvotecIT/lovelace-waste-pickup-planner/blob/main/blueprints/automation/put-out-reminder.yaml
+  input:
+    waste_calendar:
+      name: Waste calendar
+      description: The calendar that holds your pickups.
+      selector:
+        entity:
+          filter:
+            domain: calendar
+    notify_device:
+      name: Phone
+      description: The Home Assistant Companion app that gets the reminder.
+      selector:
+        device:
+          filter:
+            integration: mobile_app
+    remind_at:
+      name: Remind at
+      default: "19:00:00"
+      selector:
+        time: {}
+    days_before:
+      name: Days before the pickup
+      description: 1 reminds you the day before, 0 on the day itself.
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 3
+          mode: box
+    repeat_every:
+      name: Repeat every
+      description: Minutes between repeats until you tap Done. 0 sends a single reminder.
+      default: 60
+      selector:
+        number:
+          min: 0
+          max: 120
+          step: 5
+          unit_of_measurement: min
+    max_repeats:
+      name: Repeats
+      description: How many times to repeat at most.
+      default: 3
+      selector:
+        number:
+          min: 0
+          max: 6
+          mode: box
+    title:
+      name: Title
+      description: The notification's title. The message lists the bins.
+      default: Put the bins out
+      selector:
+        text: {}
+    done_label:
+      name: Done button
+      default: Done
+      selector:
+        text: {}
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: time
+    at: !input remind_at
+
+variables:
+  calendar: !input waste_calendar
+  device: !input notify_device
+  days_before: !input days_before
+  repeat_every: !input repeat_every
+  max_repeats: !input max_repeats
+  # The Companion app's notify action is named after the phone's original device name.
+  notify_action: "notify.mobile_app_{{ device_attr(device, 'name') | slugify }}"
+  done_action: "WASTE_PUT_OUT_DONE_{{ calendar | slugify }}"
+
+actions:
+  - action: calendar.get_events
+    target:
+      entity_id: "{{ calendar }}"
+    data:
+      start_date_time: "{{ (today_at() + timedelta(days=days_before | int)).isoformat() }}"
+      end_date_time: "{{ (today_at() + timedelta(days=days_before | int + 1)).isoformat() }}"
+    response_variable: pickups
+  - variables:
+      bins: "{{ pickups[calendar].events | map(attribute='summary') | unique | list }}"
+  - condition: template
+    value_template: "{{ bins | count > 0 }}"
+  - repeat:
+      sequence:
+        - action: "{{ notify_action }}"
+          data:
+            title: !input title
+            message: "{{ bins | join(', ') }}"
+            data:
+              tag: "{{ done_action }}"
+              actions:
+                - action: "{{ done_action }}"
+                  title: !input done_label
+        - wait_for_trigger:
+            - trigger: event
+              event_type: mobile_app_notification_action
+              event_data:
+                action: "{{ done_action }}"
+          timeout:
+            minutes: "{{ repeat_every | int }}"
+          continue_on_timeout: true
+      until:
+        - condition: template
+          value_template: >-
+            {{ wait.trigger is not none or repeat_every | int == 0
+               or repeat.index > max_repeats | int }}
