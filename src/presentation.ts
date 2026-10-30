@@ -137,6 +137,36 @@ export const strip = (events: CollectionEvent[], today: string, locale: string, 
   </div>`;
 };
 
+/**
+ * Read from across the room: the day in large type, each bin as a tile in its own
+ * colour, and the next few pickups underneath in smaller type.
+ */
+export const wall = (options: {
+  group: DateGroup; later: DateGroup[]; today: string; locale: string; moment: CollectionMoment;
+}) => {
+  const { group, later, today, locale } = options;
+  const t = strings(locale);
+  const tonight = options.moment === "tonight";
+  const shown = group.events.length > 6 ? 5 : 6;
+  return html`<div class=${`wall-now${tonight ? " tonight" : ""}`}>
+      <div class="eyebrow">${tonight ? html`<ha-icon aria-hidden="true" icon="mdi:weather-night"></ha-icon>` : nothing}${t.next}</div>
+      <span class="wall-date">${tonight ? t.putOutTonight : dateLabel(group.date, today, locale)}</span>
+      <p class="full-date">${tonight ? `${t.collectedTomorrow} · ${shortDate(group.date, locale)}` : dateDetail(group.date, today, locale)}</p>
+    </div>
+    <ul class="wall-bins">
+      ${group.events.slice(0, shown).map(e => {
+        const color = artworkColor(e);
+        return html`<li class=${`wall-bin${color ? "" : " neutral"}`} style=${styleMap(color ? { "--waste-type-color": color } : {})}>${swatch(e)}<span>${e.label}</span></li>`;
+      })}
+      ${group.events.length > shown ? html`<li class="wall-bin neutral overflow">+${new Intl.NumberFormat(locale).format(group.events.length - shown)} ${t.more}</li>` : nothing}
+    </ul>
+    ${later.length ? html`<ol class="wall-later">${later.map(next => html`<li>
+      <span class="sr-only">${spokenRowDate(next.date, today, locale)}</span>
+      <span class="wall-later-date" aria-hidden="true">${rowDateLabel(next.date, today, locale)}</span>
+      ${chips(next.events, locale, 3)}
+    </li>`)}</ol>` : nothing}`;
+};
+
 export const groupRows =(groups: DateGroup[], today: string, locale: string, chipLimit = 6) =>
   html`${groups.map((group) => {
     const d = new Date(`${group.date}T12:00:00Z`);

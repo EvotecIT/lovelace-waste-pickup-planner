@@ -112,7 +112,7 @@ function hass(state = "ready") {
 // `?evening=0` sets evening_hour so the "Put out tonight" state shows at any time of day.
 const evening = new URLSearchParams(location.search).get("evening");
 const eveningConfig = evening !== null && Number.isInteger(Number(evening)) ? { evening_hour: Number(evening) } : {};
-for (const layout of ["overview", "hero", "compact", "schedule", "badge"]) {
+for (const layout of ["overview", "hero", "compact", "schedule", "wall", "badge"]) {
   const card = document.createElement(
     layout === "badge"
       ? "waste-pickup-planner-badge"

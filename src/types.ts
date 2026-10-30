@@ -42,7 +42,7 @@ export interface CardConfig {
   entity?: string;
   entities?: string[];
   title?: string;
-  layout?: "compact" | "hero" | "schedule" | "overview";
+  layout?: "compact" | "hero" | "schedule" | "overview" | "wall";
   appearance?: "native" | "modern" | "minimal";
   density?: "comfortable" | "compact";
   show_source?: boolean;

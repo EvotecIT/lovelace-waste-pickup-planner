@@ -40,7 +40,7 @@ States are loading, ready, empty, unavailable and stale. A failed source retains
 
 ## Presentation and host integration
 
-The compact, hero, schedule and overview layouts share the same group/chip renderers. The custom badge shares their controller, projection and details dialog. Mixed pickups never inherit one collection's identity as the whole group's identity. Visible groups show at most six collection chips and an overflow count. The details dialog retains the full schedule in 100-collection pages; closed dialogs do not mount collection rows.
+The compact, hero, schedule, overview and wall layouts share the same group/chip renderers. The custom badge shares their controller, projection and details dialog. Mixed pickups never inherit one collection's identity as the whole group's identity. Visible groups show at most six collection chips and an overflow count. The details dialog retains the full schedule in 100-collection pages; closed dialogs do not mount collection rows.
 
 Overview tiles use source, category and original provider label for identity, independently of the displayed alias. Each tile shows that bin's earliest supplied date in the projected range. Lists paginate after 12 bins. Selecting a tile filters the upcoming rows and dialog; it does not change the global next-pickup header or saved configuration. Missing or hidden bins cannot be inferred as physical inventory.
 
