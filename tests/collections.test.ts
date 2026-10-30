@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { availableBins, binKey, binName, collectionOrder, nextBins, overrideInheritance, sourceName, suggestedSources } from "../src/collections.ts";
+import { availableBins, binKey, binName, calendarSensorSwaps, collectionOrder, swapCalendarSource, nextBins, overrideInheritance, sourceName, suggestedSources } from "../src/collections.ts";
 import { sensorEvents } from "../src/adapters.ts";
 import { validateConfig } from "../src/config.ts";
 import { projectEvents } from "../src/schedule.ts";
@@ -85,6 +85,56 @@ test("editor discovers complete bin names and suggests structured sources withou
   assert.deepEqual(availableBins(hass, config).map(e => e.label), ["Large bio", "Small bio"]);
   assert.deepEqual(suggestedSources(hass, config), ["sensor.waste", "sensor.empty", "calendar.waste"]);
   assert.ok(suggestedSources(hass, { ...config, entity: "sensor.temperature" }).includes("sensor.temperature"));
+});
+
+test("a calendar is matched only to a structured sensor on its own device", () => {
+  const sensor = (id: string, upcoming: unknown) => ({ entity_id: id, state: "ok", attributes: { upcoming } });
+  const hass: HomeAssistant = { connection: {}, config: { time_zone: "UTC" }, callApi: async <T>() => [] as T,
+    states: {
+      "calendar.home": { entity_id: "calendar.home", state: "off", attributes: {} },
+      "calendar.cabin": { entity_id: "calendar.cabin", state: "off", attributes: {} },
+      "sensor.home_paper": sensor("sensor.home_paper", [{ date: "2026-11-02", type: "Paper" }]),
+      "sensor.home_all": sensor("sensor.home_all", [{ date: "2026-11-02", type: "Paper" }, { date: "2026-11-03", type: "Glass" }]),
+      "sensor.home_raw": { entity_id: "sensor.home_raw", state: "ok", attributes: {} },
+      "sensor.home_empty": sensor("sensor.home_empty", []),
+      "sensor.home_down": { ...sensor("sensor.home_down", [{ date: "2026-11-02", type: "A" }, { date: "2026-11-02", type: "B" }, { date: "2026-11-02", type: "C" }]), state: "unavailable" },
+      "sensor.other_all": sensor("sensor.other_all", [{ date: "2026-11-02", type: "Paper" }, { date: "2026-11-03", type: "Bio" }, { date: "2026-11-04", type: "Glass" }]),
+    },
+    entities: { "calendar.home": { device_id: "home" }, "sensor.home_paper": { device_id: "home" }, "sensor.home_all": { device_id: "home" },
+      "sensor.home_raw": { device_id: "home" }, "sensor.home_empty": { device_id: "home" }, "sensor.home_down": { device_id: "home" }, "sensor.other_all": { device_id: "other" }, "calendar.cabin": { device_id: null } } };
+  assert.deepEqual(calendarSensorSwaps(hass, { type: "x", entities: ["calendar.home", "calendar.cabin"] }), [{ calendar: "calendar.home", sensor: "sensor.home_all" }]);
+  // A sensor already in use is not offered again.
+  assert.deepEqual(calendarSensorSwaps(hass, { type: "x", entities: ["calendar.home", "sensor.home_all"] }), [{ calendar: "calendar.home", sensor: "sensor.home_paper" }]);
+  assert.deepEqual(calendarSensorSwaps({ ...hass, entities: undefined }, { type: "x", entity: "calendar.home" }), []);
+  // With device pages on, each sensor has its own device linked to the calendar's; unrelated devices stay out.
+  const pages: HomeAssistant = { ...hass,
+    entities: { "calendar.home": { device_id: "home" }, "sensor.home_all": { device_id: "home_all" }, "sensor.other_all": { device_id: "other_all" } },
+    devices: { home: {}, home_all: { via_device_id: "home" }, other_all: { via_device_id: "other" } } };
+  assert.deepEqual(calendarSensorSwaps(pages, { type: "x", entity: "calendar.home" }), [{ calendar: "calendar.home", sensor: "sensor.home_all" }]);
+});
+
+test("switching to the sensor carries only bin settings that match one sensor bin", () => {
+  const hass: HomeAssistant = { connection: {}, config: { time_zone: "UTC" }, callApi: async <T>() => [] as T, states: {
+    "sensor.home": { entity_id: "sensor.home", state: "ok", attributes: { upcoming: [
+      { date: "2026-11-02", type: "Paper", type_id: "paper" }, { date: "2026-11-03", type: "Glass", type_id: "glass" }] } },
+  } };
+  const swapped = swapCalendarSource(hass, { type: "x", entity: "calendar.home", overrides: [
+    { type: "Paper", source: "calendar.home", label: "Paper", color: "#0000ff" },
+    { type: "Bio", source: "calendar.home", label: "Bio", hidden: true },
+    { type: "Glass", source: "calendar.home", label: "Glass", name: "Bottles" },
+    { type: "glass", source: "sensor.home", label: "Glass", color: "#00ff00" },
+    { type: "organic", color: "#795548" },
+  ] }, "calendar.home", "sensor.home");
+  assert.deepEqual(swapped.entities, ["sensor.home"]);
+  assert.equal(swapped.entity, undefined);
+  assert.deepEqual(swapped.overrides, [
+    { type: "paper", source: "sensor.home", label: "Paper", color: "#0000ff" },
+    // No sensor bin by that name, or the sensor bin has its own settings: left for review.
+    { type: "Bio", source: "calendar.home", label: "Bio", hidden: true },
+    { type: "Glass", source: "calendar.home", label: "Glass", name: "Bottles" },
+    { type: "glass", source: "sensor.home", label: "Glass", color: "#00ff00" },
+    { type: "organic", color: "#795548" },
+  ]);
 });
 
 test("bin controls inherit broader settings and can reveal a category-hidden bin", () => {

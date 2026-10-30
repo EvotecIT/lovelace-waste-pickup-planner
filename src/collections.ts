@@ -81,6 +81,54 @@ export function suggestedSources(hass: HomeAssistant, config: CardConfig): strin
     .map(e => e.entity_id)])];
 }
 
+/**
+ * Calendars carry only a name and date per pickup. Where the calendar's integration device also
+ * exposes a structured schedule sensor, offer it in the calendar's place. Waste Collection Schedule
+ * keeps sensors on the calendar's device, or with device pages on, on their own devices linked to it.
+ */
+function belongsTo(hass: HomeAssistant, entityId: string, device: string): boolean {
+  const own = hass.entities?.[entityId]?.device_id;
+  return Boolean(own) && (own === device || hass.devices?.[own!]?.via_device_id === device);
+}
+
+export function calendarSensorSwaps(hass: HomeAssistant, config: CardConfig): { calendar: string; sensor: string }[] {
+  const selected = sourceIds(config);
+  return selected.filter(id => id.startsWith("calendar.")).flatMap(calendar => {
+    const device = hass.entities?.[calendar]?.device_id;
+    if (!device) return [];
+    // The combined sensor lists the most bin types; per-type sensors list one.
+    const best = Object.values(hass.states)
+      .filter(e => e.entity_id.startsWith("sensor.") && !["unavailable", "unknown"].includes(e.state) &&
+        !selected.includes(e.entity_id) && belongsTo(hass, e.entity_id, device))
+      .map(e => ({ id: e.entity_id, result: sensorEvents(e) }))
+      // A sensor without pickups would leave the card empty in the calendar's place.
+      .filter(({ result }) => result.supported && !result.invalid && result.events.length > 0)
+      .map(({ id, result }) => ({ id, types: new Set(result.events.map(event => event.typeId ?? event.label)).size }))
+      .sort((left, right) => right.types - left.types || left.id.localeCompare(right.id))[0];
+    return best ? [{ calendar, sensor: best.id }] : [];
+  });
+}
+
+/**
+ * Replace a calendar with its sensor. Bin settings made for the calendar follow only when exactly one
+ * sensor bin has the same name and no settings of its own; anything ambiguous stays for the user to review.
+ */
+export function swapCalendarSource(hass: HomeAssistant, config: CardConfig, calendar: string, sensor: string): Partial<CardConfig> {
+  const bins = hass.states[sensor] ? sensorEvents(hass.states[sensor]).events : [];
+  const overrides = config.overrides ?? [];
+  return {
+    entity: undefined,
+    entities: sourceIds(config).map(id => id === calendar ? sensor : id),
+    overrides: overrides.map(o => {
+      if (o.source !== calendar || !o.label) return o;
+      const matches = [...new Map(bins.filter(bin => bin.label === o.label).map(bin => [binKey(bin), bin])).values()];
+      const type = matches[0]?.typeId ?? matches[0]?.label;
+      if (matches.length !== 1 || overrides.some(other => other.source === sensor && other.label === o.label)) return o;
+      return { ...o, type: type!, source: sensor };
+    }),
+  };
+}
+
 /** Discover bins before overrides; calendar entries come from the shared authenticated controller. */
 export function availableBins(hass: HomeAssistant, config: CardConfig, calendarEntries: CollectionEvent[] = []): CollectionEvent[] {
   const bins = new Map<string, CollectionEvent>();
