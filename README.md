@@ -20,7 +20,7 @@ date, right on your Home Assistant dashboard.
 - **Every bin at a glance:** the next pickup, each bin's next date, and a
   schedule you can filter by bin.
 - **Pick the size that fits:** a full overview, a compact card, a hero with bin
-  illustrations, a plain schedule list, or a small dashboard badge.
+  illustrations, a plain schedule list, a wall-tablet view, or a small dashboard badge.
 - **Your bins, your colors:** use the colors from your waste integration, or pick
   your own per bin in the visual editor.
 - **Uses what you already have:** reads your
@@ -122,6 +122,7 @@ max_groups: 4
 - **Hero** adds optional bin artwork and upcoming date groups.
 - **Schedule** shows date-grouped rows.
 - **Overview** shows the next pickup, each supplied bin's next date, a filterable schedule, and source status. Select a bin to filter the upcoming list and schedule dialog; select it again or choose **Show all bins** to clear the filter. Bin lists longer than 12 entries have page controls.
+- **Wall tablet** is for a tablet on the wall, read from across the room: the day in large type ("Put out tonight" from the evening before), each bin of the next pickup as a large tile in its own colour, and the next few pickups below. It scales with the card's width; give it the full width of a panel or a wide column.
 - **Badge** shows the next date and collection names or a count. Its accessible description includes up to six complete names; the default action opens all collections. Add it to a view's badges:
 
 ```yaml
@@ -152,7 +153,7 @@ Both components have visual editors. Advanced YAML uses the same options:
 | `entity` | Required unless `entities` is set | Sensor or calendar ID |
 | `entities` | — | Up to 12 explicit sources; do not also set `entity` |
 | `title` | No heading | Card heading; the card shows a heading row only when you set one. The schedule dialog and badge use the localized “Waste collection” when it isn't set |
-| `layout` | `compact` | `compact`, `hero`, `schedule`, or `overview` |
+| `layout` | `compact` | `compact`, `hero`, `schedule`, `overview`, or `wall` |
 | `appearance` | `native` | `native`, `modern`, or `minimal`; card presentation |
 | `density` | `comfortable` | `comfortable` or `compact`; card spacing |
 | `show_source` | Multiple sources | Source names on overview bin tiles |
@@ -165,7 +166,7 @@ Both components have visual editors. Advanced YAML uses the same options:
 | `show_strip` | `true` in hero and overview; `false` otherwise | A strip of the next 14 days with a dot per bin in its colour, so the collection rhythm shows at a glance |
 | `locale` | HA language | Optional language code such as `pl` or `en-GB` |
 | `overrides` | — | Exact collection names/IDs, display names, icons, colors, visibility |
-| `tap_action.action` | `details` | `details`, `more-info`, `navigate`, or `none`; in `compact`, `hero` and `schedule`, tapping anywhere on the card runs it, and `overview` keeps a button because its bin tiles are buttons too |
+| `tap_action.action` | `details` | `details`, `more-info`, `navigate`, or `none`; in `compact`, `hero`, `schedule` and `wall`, tapping anywhere on the card runs it, and `overview` keeps a button because its bin tiles are buttons too |
 | `tap_action.navigation_path` | — | Local dashboard path for `navigate` |
 
 `layout`, `max_groups`, `show_artwork`, `show_manage_bins`, `appearance`, `density`, and `show_source` do not change the badge presentation. `more-info` opens the first selected entity. Overview source buttons open the corresponding entity's native details.

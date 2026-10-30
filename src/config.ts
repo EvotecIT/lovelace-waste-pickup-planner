@@ -28,7 +28,7 @@ export function validateConfig(value: CardConfig): CardConfig {
     throw new Error("Choose 1–12 sensor or calendar entities.");
   if (
     value.layout !== undefined &&
-    !["compact", "hero", "schedule", "overview"].includes(value.layout)
+    !["compact", "hero", "schedule", "overview", "wall"].includes(value.layout)
   )
     throw new Error("Unknown layout.");
   if (value.appearance !== undefined && !["native", "modern", "minimal"].includes(value.appearance))

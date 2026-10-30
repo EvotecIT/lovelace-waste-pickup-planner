@@ -3,7 +3,7 @@ import { sourceIds, validateConfig } from "./config.ts";
 import { ScheduleController } from "./controller.ts";
 import { dateLabel, headline, homeDate, homeHour, updateLabel } from "./dates.ts";
 import { groupEvents } from "./schedule.ts";
-import { groupRows, nextCollection, strip } from "./presentation.ts";
+import { groupRows, nextCollection, strip, wall } from "./presentation.ts";
 import { strings, sourceMessage } from "./strings.ts";
 import { styles } from "./styles.ts";
 import { createEditor } from "./ha-editor.ts";
@@ -90,6 +90,7 @@ export class WastePickupPlannerCard extends LitElement {
   }
   getCardSize(): number {
     if (this.config?.layout === "overview") return 8;
+    if (this.config?.layout === "wall") return 7;
     return this.config?.layout === "schedule"
       ? Math.min(this.config.max_groups! + 1, 8)
       : this.config?.layout === "hero"
@@ -285,6 +286,8 @@ export class WastePickupPlannerCard extends LitElement {
                     strip: showStrip ? stripDays : 0,
                     showSource, sources, hass: this.ha, maxGroups: this.config.max_groups!, selected, page: this.binPage,
                     select: key => { this.selectedBin = key; this.detailsPage = 0; }, changePage: page => { this.binPage = page; } })
+                : this.config.layout === "wall"
+                ? wall({ group: next, later: later.slice(0, this.config.max_groups! - 1), today, locale, moment })
                 : this.config.layout === "schedule"
                 ? html`${showStrip ? strip(events, today, locale, stripDays) : nothing}${groupRows(
                     groups.slice(0, this.config.max_groups),

@@ -79,7 +79,7 @@ export class WastePickupPlannerEditor extends LitElement {
     } } });
     const schema = [
       { name: "entities", required: true, selector: { entity: { domain: ["sensor", "calendar"], multiple: true, include_entities: suggestedSources(this.ha!, this.config!) } } },
-      { name: "title", selector: { text: {} } }, select("layout", ["compact", "hero", "schedule", "overview"]),
+      { name: "title", selector: { text: {} } }, select("layout", ["compact", "hero", "schedule", "overview", "wall"]),
       select("appearance", ["native", "modern", "minimal"]), select("density", ["comfortable", "compact"]),
       { name: "days_to_show", selector: { number: { min: 1, max: 366, mode: "box" } } },
       { name: "max_groups", selector: { number: { min: 1, max: 50, mode: "box" } } },

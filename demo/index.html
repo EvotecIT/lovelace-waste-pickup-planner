@@ -60,6 +60,9 @@
       .panel {
         min-width: 0;
       }
+      .panel.wide {
+        grid-column: 1 / -1;
+      }
       .label {
         font-size: 12px;
         letter-spacing: 0.1em;
@@ -142,6 +145,9 @@
       <section class="panel">
         <p class="label">SCHEDULE</p>
         <div id="schedule"></div>
+      </section>      <section class="panel wide">
+        <p class="label">WALL TABLET</p>
+        <div id="wall"></div>
       </section>
     </main>
     <script type="module" src="/demo/demo.js"></script>
