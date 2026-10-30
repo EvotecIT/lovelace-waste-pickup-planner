@@ -92,13 +92,35 @@ export function calendarSensorSwaps(hass: HomeAssistant, config: CardConfig): { 
     if (!device) return [];
     // The combined sensor lists the most bin types; per-type sensors list one.
     const best = Object.values(hass.states)
-      .filter(e => e.entity_id.startsWith("sensor.") && !selected.includes(e.entity_id) && hass.entities?.[e.entity_id]?.device_id === device)
+      .filter(e => e.entity_id.startsWith("sensor.") && !["unavailable", "unknown"].includes(e.state) &&
+        !selected.includes(e.entity_id) && hass.entities?.[e.entity_id]?.device_id === device)
       .map(e => ({ id: e.entity_id, result: sensorEvents(e) }))
-      .filter(({ result }) => result.supported && !result.invalid)
+      // A sensor without pickups would leave the card empty in the calendar's place.
+      .filter(({ result }) => result.supported && !result.invalid && result.events.length > 0)
       .map(({ id, result }) => ({ id, types: new Set(result.events.map(event => event.typeId ?? event.label)).size }))
       .sort((left, right) => right.types - left.types || left.id.localeCompare(right.id))[0];
     return best ? [{ calendar, sensor: best.id }] : [];
   });
+}
+
+/**
+ * Replace a calendar with its sensor. Bin settings made for the calendar follow only when exactly one
+ * sensor bin has the same name and no settings of its own; anything ambiguous stays for the user to review.
+ */
+export function swapCalendarSource(hass: HomeAssistant, config: CardConfig, calendar: string, sensor: string): Partial<CardConfig> {
+  const bins = hass.states[sensor] ? sensorEvents(hass.states[sensor]).events : [];
+  const overrides = config.overrides ?? [];
+  return {
+    entity: undefined,
+    entities: sourceIds(config).map(id => id === calendar ? sensor : id),
+    overrides: overrides.map(o => {
+      if (o.source !== calendar || !o.label) return o;
+      const matches = [...new Map(bins.filter(bin => bin.label === o.label).map(bin => [binKey(bin), bin])).values()];
+      const type = matches[0]?.typeId ?? matches[0]?.label;
+      if (matches.length !== 1 || overrides.some(other => other.source === sensor && other.label === o.label)) return o;
+      return { ...o, type: type!, source: sensor };
+    }),
+  };
 }
 
 /** Discover bins before overrides; calendar entries come from the shared authenticated controller. */
