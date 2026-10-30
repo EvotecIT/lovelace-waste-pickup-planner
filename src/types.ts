@@ -11,6 +11,8 @@ export interface HomeAssistant {
   language?: string;
   /** Entity registry display entries; only the owning device is read. */
   entities?: Record<string, { device_id?: string | null }>;
+  /** Device registry entries; only the parent link is read. */
+  devices?: Record<string, { via_device_id?: string | null }>;
   connection: object;
   callApi<T>(method: string, path: string): Promise<T>;
 }

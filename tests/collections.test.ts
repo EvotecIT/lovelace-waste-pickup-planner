@@ -106,6 +106,11 @@ test("a calendar is matched only to a structured sensor on its own device", () =
   // A sensor already in use is not offered again.
   assert.deepEqual(calendarSensorSwaps(hass, { type: "x", entities: ["calendar.home", "sensor.home_all"] }), [{ calendar: "calendar.home", sensor: "sensor.home_paper" }]);
   assert.deepEqual(calendarSensorSwaps({ ...hass, entities: undefined }, { type: "x", entity: "calendar.home" }), []);
+  // With device pages on, each sensor has its own device linked to the calendar's; unrelated devices stay out.
+  const pages: HomeAssistant = { ...hass,
+    entities: { "calendar.home": { device_id: "home" }, "sensor.home_all": { device_id: "home_all" }, "sensor.other_all": { device_id: "other_all" } },
+    devices: { home: {}, home_all: { via_device_id: "home" }, other_all: { via_device_id: "other" } } };
+  assert.deepEqual(calendarSensorSwaps(pages, { type: "x", entity: "calendar.home" }), [{ calendar: "calendar.home", sensor: "sensor.home_all" }]);
 });
 
 test("switching to the sensor carries only bin settings that match one sensor bin", () => {

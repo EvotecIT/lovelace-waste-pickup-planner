@@ -82,9 +82,15 @@ export function suggestedSources(hass: HomeAssistant, config: CardConfig): strin
 }
 
 /**
- * Calendars carry only a name and date per pickup. Where the same integration device also
- * exposes a structured schedule sensor, offer it in the calendar's place.
+ * Calendars carry only a name and date per pickup. Where the calendar's integration device also
+ * exposes a structured schedule sensor, offer it in the calendar's place. Waste Collection Schedule
+ * keeps sensors on the calendar's device, or with device pages on, on their own devices linked to it.
  */
+function belongsTo(hass: HomeAssistant, entityId: string, device: string): boolean {
+  const own = hass.entities?.[entityId]?.device_id;
+  return Boolean(own) && (own === device || hass.devices?.[own!]?.via_device_id === device);
+}
+
 export function calendarSensorSwaps(hass: HomeAssistant, config: CardConfig): { calendar: string; sensor: string }[] {
   const selected = sourceIds(config);
   return selected.filter(id => id.startsWith("calendar.")).flatMap(calendar => {
@@ -93,7 +99,7 @@ export function calendarSensorSwaps(hass: HomeAssistant, config: CardConfig): { 
     // The combined sensor lists the most bin types; per-type sensors list one.
     const best = Object.values(hass.states)
       .filter(e => e.entity_id.startsWith("sensor.") && !["unavailable", "unknown"].includes(e.state) &&
-        !selected.includes(e.entity_id) && hass.entities?.[e.entity_id]?.device_id === device)
+        !selected.includes(e.entity_id) && belongsTo(hass, e.entity_id, device))
       .map(e => ({ id: e.entity_id, result: sensorEvents(e) }))
       // A sensor without pickups would leave the card empty in the calendar's place.
       .filter(({ result }) => result.supported && !result.invalid && result.events.length > 0)
