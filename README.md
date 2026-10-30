@@ -27,6 +27,8 @@ date, right on your Home Assistant dashboard.
   [Waste Collection Schedule](https://github.com/mampfes/hacs_waste_collection_schedule)
   sensor or any Home Assistant calendar. No extra account, and nothing is sent
   to your council.
+- **A reminder to put the bins out:** an optional automation blueprint sends
+  your phone the bins for the next pickup, repeating until you tap Done.
 - **Set up in the visual editor.** YAML is optional.
 
 Requires **Home Assistant 2026.9.1 or newer**.
@@ -223,6 +225,26 @@ An empty date range is distinct from an unavailable source. If a source fails af
 
 Calendar reads are shared across instances on the same HA connection while pending and for one minute after completion. Detached components stop publishing results and remove their timers/listeners; requests already issued through HA's `callApi` may finish in the background.
 
+## Put-out reminder
+
+[![Open your Home Assistant instance and show the blueprint import dialog with this blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FEvotecIT%2Flovelace-waste-pickup-planner%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fput-out-reminder.yaml)
+
+The [Put the bins out](blueprints/automation/put-out-reminder.yaml) blueprint
+sends a notification to the Home Assistant Companion app on your phone. It reads
+the pickups from your waste calendar, so it works with any Waste Collection
+Schedule version and with other calendars. The card itself isn't needed.
+
+1. Select the badge above, or go to **Settings → Automations & scenes →
+   Blueprints → Import blueprint** and paste the blueprint's link.
+2. Create an automation from **Put the bins out**.
+3. Choose your waste calendar, your phone, and when to be reminded. The default
+   is 19:00 the day before a pickup.
+
+The notification lists the bins for that day, for example *Bio, Paper*. It
+repeats every 60 minutes, up to 3 times, until you tap **Done**. You can change
+the title and the button text, for example into your language. Nothing is sent
+when no pickup is due.
+
 ## Native Home Assistant alternatives
 
 Existing sensors also work without this frontend. For a built-in [entity badge](https://www.home-assistant.io/dashboards/badges/):
@@ -259,6 +281,7 @@ Native cards display the sensor's own state. They do not gain this card's groupi
 | I want to… | Guide |
 | --- | --- |
 | Add my first card or badge | [First dashboard setup](#first-dashboard-setup) |
+| Get a reminder to put the bins out | [Put-out reminder](#put-out-reminder) |
 | Choose a sensor or calendar | [Source setup](#choose-a-source) |
 | Choose a layout or look up an option | [Layouts](#layouts) · [Configuration](#configuration) |
 | Check accepted source data and compatibility | [Data and API reference](docs/design-and-api.md) |
