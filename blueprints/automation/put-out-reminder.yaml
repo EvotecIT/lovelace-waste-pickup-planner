@@ -92,7 +92,11 @@ actions:
       end_date_time: "{{ (today_at() + timedelta(days=days_before | int + 1)).isoformat() }}"
     response_variable: pickups
   - variables:
-      bins: "{{ pickups[calendar].events | map(attribute='summary') | unique | list }}"
+      # Only events that start that day; a multi-day event overlapping it is not a pickup.
+      day: "{{ (today_at() + timedelta(days=days_before | int)).date().isoformat() }}"
+      bins: >-
+        {{ pickups[calendar].events | selectattr('start', 'match', day)
+           | map(attribute='summary') | unique | list }}
   - condition: template
     value_template: "{{ bins | count > 0 }}"
   - repeat:
