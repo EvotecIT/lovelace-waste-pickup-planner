@@ -81,6 +81,26 @@ export function suggestedSources(hass: HomeAssistant, config: CardConfig): strin
     .map(e => e.entity_id)])];
 }
 
+/**
+ * Calendars carry only a name and date per pickup. Where the same integration device also
+ * exposes a structured schedule sensor, offer it in the calendar's place.
+ */
+export function calendarSensorSwaps(hass: HomeAssistant, config: CardConfig): { calendar: string; sensor: string }[] {
+  const selected = sourceIds(config);
+  return selected.filter(id => id.startsWith("calendar.")).flatMap(calendar => {
+    const device = hass.entities?.[calendar]?.device_id;
+    if (!device) return [];
+    // The combined sensor lists the most bin types; per-type sensors list one.
+    const best = Object.values(hass.states)
+      .filter(e => e.entity_id.startsWith("sensor.") && !selected.includes(e.entity_id) && hass.entities?.[e.entity_id]?.device_id === device)
+      .map(e => ({ id: e.entity_id, result: sensorEvents(e) }))
+      .filter(({ result }) => result.supported && !result.invalid)
+      .map(({ id, result }) => ({ id, types: new Set(result.events.map(event => event.typeId ?? event.label)).size }))
+      .sort((left, right) => right.types - left.types || left.id.localeCompare(right.id))[0];
+    return best ? [{ calendar, sensor: best.id }] : [];
+  });
+}
+
 /** Discover bins before overrides; calendar entries come from the shared authenticated controller. */
 export function availableBins(hass: HomeAssistant, config: CardConfig, calendarEntries: CollectionEvent[] = []): CollectionEvent[] {
   const bins = new Map<string, CollectionEvent>();

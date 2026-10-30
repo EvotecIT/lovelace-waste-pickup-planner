@@ -44,7 +44,7 @@ The compact, hero, schedule and overview layouts share the same group/chip rende
 
 Overview tiles use source, category and original provider label for identity, independently of the displayed alias. Each tile shows that bin's earliest supplied date in the projected range. Lists paginate after 12 bins. Selecting a tile filters the upcoming rows and dialog; it does not change the global next-pickup header or saved configuration. Missing or hidden bins cannot be inferred as physical inventory.
 
-The editor discovers sensor bins before overrides and calendar bins through the shared controller with overrides disabled, so hiding a calendar bin does not remove its editing control. Source, range, connection and timezone changes fence old reads. Only one bin panel opens at a time; broader category settings retain their existing inheritance. English and Polish labels cover the editor and card.
+The editor discovers sensor bins before overrides and calendar bins through the shared controller with overrides disabled, so hiding a calendar bin does not remove its editing control. Source, range, connection and timezone changes fence old reads. Only one bin panel opens at a time; broader category settings retain their existing inheritance. A selected calendar shows a short note that its bins stay neutral; when a structured sensor shares the calendar's device in the entity registry, the note offers to replace the calendar with that sensor. English and Polish labels cover the editor and card.
 
 Artwork is optional and decorative. Source/customized colors and explicit card overrides can color a bin. A `default` color may style the corresponding collection icon, but its bin remains neutral. Missing colors also remain neutral.
 

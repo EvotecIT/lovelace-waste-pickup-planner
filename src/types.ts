@@ -9,6 +9,8 @@ export interface HomeAssistant {
   config: { time_zone: string };
   locale?: { language?: string };
   language?: string;
+  /** Entity registry display entries; only the owning device is read. */
+  entities?: Record<string, { device_id?: string | null }>;
   connection: object;
   callApi<T>(method: string, path: string): Promise<T>;
 }

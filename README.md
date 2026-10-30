@@ -101,6 +101,8 @@ entity: calendar.waste_collection
 layout: compact
 ```
 
+A calendar only gives a name and date for each pickup, so its bins stay neutral. When the selected calendar belongs to a device that also has a structured Waste Collection Schedule sensor, the editor offers to use that sensor instead.
+
 Use one authoritative source for each address. Multiple explicit sources are supported through `entities`, but the card does not infer which sensors or calendars represent the same address. Selecting both a combined sensor and its calendar can show both representations. Separate selected sources retain their identity even when dates and names match.
 
 ## Layouts

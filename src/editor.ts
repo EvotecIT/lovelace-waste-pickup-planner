@@ -1,7 +1,7 @@
 import { LitElement, html, nothing } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot, TypeOverride } from "./types.ts";
-import { availableBins, binName, collectionOverride, matchesCollection, overrideInheritance, sourceName, suggestedSources } from "./collections.ts";
+import { availableBins, binName, calendarSensorSwaps, collectionOverride, matchesCollection, overrideInheritance, sourceName, suggestedSources } from "./collections.ts";
 import { sensorEvents } from "./adapters.ts";
 import { sourceIds, validateConfig } from "./config.ts";
 import { ScheduleController } from "./controller.ts";
@@ -138,6 +138,10 @@ export class WastePickupPlannerEditor extends LitElement {
     const namingChoices = [...choices, ...manualChoices];
     return html`<h3>${t.source}</h3>${this.form(["entities", "title", "layout"], t)}<p>${t.sourceHelp}</p>
       ${unsupported.length ? html`<p class="warning" role="status">${unsupported.join(", ")}: ${t.unsupported}</p>` : nothing}
+      ${sources.some(id => id.startsWith("calendar.")) ? html`<div class="hint"><p>${t.calendarColors}</p>
+        ${calendarSensorSwaps(this.ha, this.config).map(({ calendar, sensor }) => html`<button
+          aria-label=${`${t.useSensor}: ${sourceName(this.ha, sensor, [sensor])} · ${sourceName(this.ha, calendar, sources)}`}
+          @click=${() => this.changed({ entity: undefined, entities: sources.map(id => id === calendar ? sensor : id) })}>${t.useSensor} · ${sourceName(this.ha, sensor, [sensor])}</button>`)}</div>` : nothing}
       ${!this.config.type.includes("badge") ? html`<h3>${t.appearanceSection}</h3>${this.form(["appearance", "density", "show_artwork", "show_strip", "show_source", "show_manage_bins"], t)}` : nothing}
       <h3>${t.binsSection}</h3><p>${t.binsHelp}</p>
       ${overrides.length >= 100 ? html`<p role="status">${t.overrideLimit}</p>` : nothing}

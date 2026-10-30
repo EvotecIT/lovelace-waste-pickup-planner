@@ -17,6 +17,8 @@ export const editorStyles = css`
   .check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
   .check input { min-height: 0; width: 20px; height: 20px; padding: 0; flex-shrink: 0; }
   .warning { padding: 12px; border-inline-start: 3px solid var(--warning-color, #ffa600); }
+  .hint { display: grid; gap: 8px; justify-items: start; padding: 4px 12px 12px; border-inline-start: 3px solid var(--info-color, #039be5); }
+  .hint p { margin: 8px 0 0; }
   .bin-list { display: grid; gap: 6px; }
   .bin-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; width: 100%; text-align: start; min-height: 60px; }
   .bin-row[aria-pressed="true"] { border-color: var(--primary-color); }
