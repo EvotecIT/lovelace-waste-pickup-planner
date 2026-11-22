@@ -1,4 +1,5 @@
 import type { CardConfig } from "./types.ts";
+import { canonicalLocale } from "./locale.ts";
 export const validColor = (value: unknown): value is string =>
   typeof value === "string" && /^#[\da-f]{6}$/i.test(value);
 export const validIcon = (value: unknown): value is string =>
@@ -51,11 +52,9 @@ export function validateConfig(value: CardConfig): CardConfig {
       throw new Error(`${key} must be true or false.`);
   if (value.title !== undefined && typeof value.title !== "string")
     throw new Error("title must be text.");
-  if (value.locale !== undefined) {
-    if (typeof value.locale !== "string")
-      throw new Error("locale must be a language code.");
-    new Intl.DateTimeFormat(value.locale);
-  }
+  const locale = canonicalLocale(value.locale);
+  if (value.locale !== undefined && !locale)
+    throw new Error("locale must be a language code such as nl or en-GB.");
   if (value.overrides !== undefined) {
     if (!Array.isArray(value.overrides) || value.overrides.length > 100)
       throw new Error("overrides must contain at most 100 types.");
@@ -93,6 +92,7 @@ export function validateConfig(value: CardConfig): CardConfig {
   }
   return {
     ...value,
+    ...(locale ? { locale } : {}),
     entities: value.entities ? [...value.entities] : undefined,
     layout: value.layout ?? "compact",
     days_to_show: value.days_to_show ?? 30,

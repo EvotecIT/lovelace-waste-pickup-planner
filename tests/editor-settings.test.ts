@@ -42,8 +42,8 @@ test("only an actual source selection replaces the legacy entity field", () => {
 });
 
 test("advanced clearing and section boundaries do not persist other form values", () => {
-  const data = editorData({ ...config, title: "Garden", locale: "pl", days_to_show: 45 });
+  const data = editorData({ ...config, title: "Garden", max_groups: 15, days_to_show: 45 });
   assert.deepEqual(changedSettings(data, { ...data, title: undefined, density: "compact" }, source), { title: undefined });
-  assert.deepEqual(changedSettings(data, { ...data, locale: undefined, days_to_show: 30 }, ["locale", "days_to_show"]), { locale: undefined, days_to_show: 30 });
+  assert.deepEqual(changedSettings(data, { ...data, max_groups: undefined, days_to_show: 30 }, ["max_groups", "days_to_show"]), { max_groups: undefined, days_to_show: 30 });
   assert.deepEqual(changedSettings(data, {}, source), {});
 });

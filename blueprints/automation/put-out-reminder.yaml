@@ -81,7 +81,7 @@ variables:
   max_repeats: !input max_repeats
   # The Companion app's notify action is named after the phone's original device name.
   notify_action: "notify.mobile_app_{{ device_attr(device, 'name') | slugify }}"
-  done_action: "WASTE_PUT_OUT_DONE_{{ calendar | slugify }}"
+  notification_tag: "WASTE_PUT_OUT_{{ this.entity_id | slugify }}"
 
 actions:
   - action: calendar.get_events
@@ -94,6 +94,8 @@ actions:
   - variables:
       # Only events that start that day; a multi-day event overlapping it is not a pickup.
       day: "{{ (today_at() + timedelta(days=days_before | int)).date().isoformat() }}"
+      # Each run listens only for acknowledgments of its own notification.
+      done_action: "WASTE_PUT_OUT_DONE_{{ context.id }}"
       bins: >-
         {{ pickups[calendar].events | selectattr('start', 'match', day)
            | map(attribute='summary') | unique | list }}
@@ -106,7 +108,7 @@ actions:
             title: !input title
             message: "{{ bins | join(', ') }}"
             data:
-              tag: "{{ done_action }}"
+              tag: "{{ notification_tag }}"
               actions:
                 - action: "{{ done_action }}"
                   title: !input done_label

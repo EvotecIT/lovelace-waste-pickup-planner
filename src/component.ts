@@ -9,6 +9,7 @@ import { styles } from "./styles.ts";
 import { createEditor } from "./ha-editor.ts";
 import { binKey, collectionOrder, sourceName, suggestedSources } from "./collections.ts";
 import { overview } from "./overview.ts";
+import { resolveLocale } from "./locale.ts";
 import type { CardConfig, HomeAssistant, ScheduleSnapshot } from "./types.ts";
 export class WastePickupPlannerCard extends LitElement {
   static styles = styles;
@@ -129,14 +130,6 @@ export class WastePickupPlannerCard extends LitElement {
       if (value.status !== "loading" || !this.snapshot) this.snapshot = value;
     });
   }
-  private locale(): string {
-    return (
-      this.config?.locale ||
-      this.ha?.locale?.language ||
-      this.ha?.language ||
-      "en"
-    );
-  }
   private async activate(): Promise<void> {
     const config = this.config;
     if (!config) return;
@@ -192,7 +185,7 @@ export class WastePickupPlannerCard extends LitElement {
   }
   protected render() {
     if (!this.config) return nothing;
-    const locale = this.locale(),
+    const locale = resolveLocale(this.config.locale, this.ha),
       t = strings(locale),
       snapshot = this.snapshot;
     const events = [...(snapshot?.events ?? [])].sort(collectionOrder(locale));

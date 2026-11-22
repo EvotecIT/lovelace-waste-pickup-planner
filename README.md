@@ -130,7 +130,7 @@ type: custom:waste-pickup-planner-badge
 entity: sensor.waste_schedule
 ```
 
-Visible date groups show up to six complete collection names and an overflow count. The default action opens the full schedule for the configured date range, in pages of 100 collections. The dialog supports keyboard navigation and Escape to close. English and Polish interface labels are included; dates follow Home Assistant's language and home timezone.
+Visible date groups show up to six complete collection names and an overflow count. The default action opens the full schedule for the configured date range, in pages of 100 collections. The dialog supports keyboard navigation and Escape to close. The card includes Dutch, English and Polish labels. Dates follow the selected language and Home Assistant’s home timezone.
 
 For an overview with a tinted header and tighter spacing:
 
@@ -164,7 +164,7 @@ Both components have visual editors. Advanced YAML uses the same options:
 | `show_manage_bins` | `false` | Card shortcut to the Waste Collection Schedule integration page |
 | `evening_hour` | `18` | Home-clock hour (0–23) from which the card says “Put out tonight” for tomorrow's bins, and the badge does too |
 | `show_strip` | `true` in hero and overview; `false` otherwise | A strip of the next 14 days with a dot per bin in its colour, so the collection rhythm shows at a glance |
-| `locale` | HA language | Optional language code such as `pl` or `en-GB` |
+| `locale` | HA language | Optional language code such as `nl`, `nl-BE` or `en-GB` |
 | `overrides` | — | Exact collection names/IDs, display names, icons, colors, visibility |
 | `tap_action.action` | `details` | `details`, `more-info`, `navigate`, or `none`; in `compact`, `hero`, `schedule` and `wall`, tapping anywhere on the card runs it, and `overview` keeps a button because its bin tiles are buttons too |
 | `tap_action.navigation_path` | — | Local dashboard path for `navigate` |
@@ -173,7 +173,7 @@ Both components have visual editors. Advanced YAML uses the same options:
 
 ### Visual bin colors
 
-The visual editor starts with **Source and layout**, followed by **Appearance** and **Bins**. Select a bin to open its editing panel, then pick a local color, change its display name, or hide it. Only one panel opens at a time. **Use integration color** removes the local color override; **Reset this override** removes that bin's local settings. Category matching, icons, date-range settings and tap actions stay under **Advanced settings**. The editor follows HA's English or Polish language setting.
+The visual editor starts with **Source and layout**, followed by **Appearance** and **Bins**. Select a bin to open its editing panel, then pick a local color, change its display name, or hide it. Only one panel opens at a time. **Use integration color** removes the local color override; **Reset this override** removes that bin's local settings. Category matching, icons, date-range settings and tap actions stay under **Advanced settings**. The editor follows the same language as the card. Clear the language override in Advanced settings to use your Home Assistant profile language. Other languages use English labels and localized dates.
 
 Settings affect this card or badge; manage bin definitions and shared colors in Waste Collection Schedule. Enable **Show Manage bins shortcut** on a card to open that integration's native management page.
 
@@ -244,7 +244,8 @@ Schedule version and with other calendars. The card itself isn't needed.
 The notification lists the bins for that day, for example *Bio, Paper*. It
 repeats every 60 minutes, up to 3 times, until you tap **Done**. You can change
 the title and the button text, for example into your language. Nothing is sent
-when no pickup is due.
+when no pickup is due. If you already imported the blueprint, re-import it
+with overwrite enabled and reload automations to pick up the latest version.
 
 ## Native Home Assistant alternatives
 
