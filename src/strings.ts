@@ -1,3 +1,4 @@
+import { localized } from "./locale.ts";
 import type { SourceIssue } from "./types.ts";
 
 const en = {
@@ -68,8 +69,42 @@ const pl: typeof en = {
   sourceInvalid: "Nieprawidłowe dane odbiorów. Sprawdź integrację źródłową.",
   sourceLoadFailed: "Nie udało się wczytać źródła. Sprawdź encję i połączenie w Home Assistant.",
 };
-export const strings = (locale: string): typeof en =>
-  locale.toLowerCase().startsWith("pl") ? pl : en;
+const nl: typeof en = {
+  title: "Afvalinzameling",
+  next: "Volgende inzameling",
+  putOutTonight: "Zet vanavond buiten",
+  collectedTomorrow: "Morgen opgehaald",
+  comingDays: "Komende dagen",
+  schedule: "Inzamelschema",
+  close: "Sluiten",
+  loading: "Inzamelschema laden…",
+  empty: "Geen inzamelingen in deze periode",
+  partialEmpty: "Geen inzameldata uit de beschikbare bronnen",
+  unavailable: "Inzamelschema niet beschikbaar",
+  stale: "Sommige bronnen zijn niet beschikbaar. De datums kunnen verouderd zijn.",
+  staleBadge: "Verouderd",
+  collections: "inzamelingen",
+  updated: "Bron bijgewerkt",
+  details: "Bekijk het inzamelschema",
+  manageBins: "Containers beheren",
+  today: "Vandaag",
+  more: "meer",
+  previousPage: "Vorige pagina",
+  nextPage: "Volgende pagina",
+  yourBins: "Je containers",
+  upcoming: "Komende inzamelingen",
+  clearFilter: "Toon alle containers",
+  filterHint: "Selecteer een container om het schema te filteren",
+  ready: "Inzamelschema beschikbaar",
+  sources: "Bronnen",
+  binPage: "Containerpagina’s",
+  sourceUnavailable: "Bron niet beschikbaar. Controleer de entiteit in Home Assistant.",
+  sourceUnsupported: "Selecteer een sensor met Generic-gegevens of een kalender.",
+  sourceInvalid: "Ongeldige inzamelgegevens. Controleer de bronintegratie.",
+  sourceLoadFailed: "Kan deze bron niet laden. Controleer de entiteit en de verbinding in Home Assistant.",
+};
+const catalogs = new Map([["nl", nl], ["pl", pl]]);
+export const strings = (locale: string): typeof en => localized(locale, catalogs, en);
 
 export const sourceMessage = (issue: SourceIssue, locale: string): string =>
   `${issue.source}: ${strings(locale)[issue.reason]}`;

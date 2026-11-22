@@ -1,5 +1,6 @@
 import { sensorEvents } from "./adapters.ts";
 import { sourceIds } from "./config.ts";
+import { resolveLocale } from "./locale.ts";
 import type { CardConfig, CollectionEvent, HomeAssistant, TypeOverride } from "./types.ts";
 
 /** Keep selected sources distinguishable even when their display names coincide. */
@@ -16,7 +17,7 @@ export function sourceName(hass: HomeAssistant | undefined, id: string, selected
 function labelOrder(locale: string): (a: CollectionEvent, b: CollectionEvent) => number {
   let collator: Intl.Collator;
   try { collator = new Intl.Collator(locale); }
-  catch { collator = new Intl.Collator("en"); } // The editor can contain an incomplete locale value.
+  catch { collator = new Intl.Collator("en"); }
   return (a, b) => collator.compare(a.label, b.label) || (a.sourceId < b.sourceId ? -1 : a.sourceId > b.sourceId ? 1 : 0);
 }
 
@@ -145,7 +146,7 @@ export function availableBins(hass: HomeAssistant, config: CardConfig, calendarE
       bins.set(binKey(event), event);
   }
   // The editor inventory is alphabetical rather than ordered by next collection date.
-  return [...bins.values()].sort(labelOrder(config.locale || hass.locale?.language || hass.language || "en"));
+  return [...bins.values()].sort(labelOrder(resolveLocale(config.locale, hass)));
 }
 
 /** One next occurrence per source/bin, with display aliases excluded from identity. */

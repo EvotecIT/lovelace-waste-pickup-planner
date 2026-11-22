@@ -8,13 +8,15 @@ import { ScheduleController } from "./controller.ts";
 import { editorStrings, type EditorStrings } from "./editor-strings.ts";
 import { editorStyles } from "./editor-styles.ts";
 import { changedSettings, editorData } from "./editor-settings.ts";
+import { canonicalLocale, resolveLocale } from "./locale.ts";
 
 export class WastePickupPlannerEditor extends LitElement {
-  static properties = { config: { state: true }, editing: { state: true }, calendarSnapshot: { state: true } };
+  static properties = { config: { state: true }, editing: { state: true }, calendarSnapshot: { state: true }, invalidLocale: { state: true } };
   static styles = editorStyles;
   private ha?: HomeAssistant;
   private config?: CardConfig;
   private editing?: number;
+  private invalidLocale = false;
   private calendarSnapshot?: ScheduleSnapshot;
   private controller = new ScheduleController();
   private timer?: ReturnType<typeof setInterval>;
@@ -35,6 +37,7 @@ export class WastePickupPlannerEditor extends LitElement {
   setConfig(value: CardConfig): void {
     const previous = this.config;
     this.config = { ...value };
+    if (value.locale !== previous?.locale) this.invalidLocale = false;
     if (!previous || JSON.stringify(sourceIds(previous)) !== JSON.stringify(sourceIds(value)) || previous.days_to_show !== value.days_to_show) {
       this.controller.reset();
       this.calendarSnapshot = undefined;
@@ -85,7 +88,6 @@ export class WastePickupPlannerEditor extends LitElement {
       { name: "max_groups", selector: { number: { min: 1, max: 50, mode: "box" } } },
       { name: "evening_hour", selector: { number: { min: 0, max: 23, mode: "box", unit_of_measurement: "h" } } },
       ...["show_artwork", "show_updated", "show_manage_bins", "show_source", "show_strip"].map(name => ({ name, selector: { boolean: {} } })),
-      { name: "locale", selector: { text: {} } },
     ].filter(s => names.includes(s.name) && (!badge || !["layout", "max_groups", "show_artwork", "show_manage_bins", "appearance", "density", "show_source", "show_strip"].includes(s.name)));
     if (!schema.length) return nothing;
     const data = editorData(this.config!);
@@ -95,6 +97,14 @@ export class WastePickupPlannerEditor extends LitElement {
         const patch = changedSettings(data, event.detail.value, schema.map(s => s.name));
         if (Object.keys(patch).length) this.changed(patch);
       }}></ha-form>`;
+  }
+  private changeLocale(input: HTMLInputElement): void {
+    const value = input.value.trim();
+    const locale = canonicalLocale(value);
+    this.invalidLocale = Boolean(value && !locale);
+    if (this.invalidLocale) return;
+    input.value = locale ?? "";
+    if (locale !== this.config?.locale) this.changed({ locale });
   }
   private editPanel(t: EditorStrings, bins: ReturnType<typeof availableBins>, choices: ReturnType<typeof availableBins>, namingChoices: Parameters<typeof binName>[1]) {
     const index = this.editing;
@@ -127,7 +137,7 @@ export class WastePickupPlannerEditor extends LitElement {
   }
   protected render() {
     if (!this.config || !this.ha) return nothing;
-    const t = editorStrings(this.config.locale || this.ha.locale?.language || this.ha.language || "en");
+    const t = editorStrings(resolveLocale(this.config.locale, this.ha));
     const bins = availableBins(this.ha, this.config, this.calendarSnapshot?.events);
     const overrides = this.config.overrides ?? [];
     const sources = sourceIds(this.config);
@@ -162,7 +172,12 @@ export class WastePickupPlannerEditor extends LitElement {
       ${!bins.length ? html`<p>${t.noBins}</p>` : nothing}
       ${sourceIds(this.config).some(id => id.startsWith("calendar.")) ? html`<p>${t.rangeHelp}</p>
         ${!this.calendarSnapshot || this.calendarSnapshot.status === "loading" ? html`<p role="status">${t.calendarLoading}</p>` : this.calendarSnapshot.messages.some(m => m.source.startsWith("calendar.")) ? html`<p class="warning" role="status">${t.calendarFailed} <button @click=${this.refreshBins}>${t.retry}</button></p>` : nothing}` : nothing}
-      <details><summary>${t.advanced}</summary>${this.form(["days_to_show", "max_groups", "evening_hour", "show_updated", "locale"], t)}
+      <details><summary>${t.advanced}</summary>${this.form(["days_to_show", "max_groups", "evening_hour", "show_updated"], t)}
+        <label>${t.locale}<input .value=${this.config.locale ?? ""} spellcheck="false"
+          aria-invalid=${this.invalidLocale ? "true" : "false"}
+          aria-describedby=${this.invalidLocale ? "locale-error" : nothing}
+          @change=${(e: Event) => this.changeLocale(e.target as HTMLInputElement)} /></label>
+        ${this.invalidLocale ? html`<p id="locale-error" class="warning" role="alert">${t.invalidLocale}</p>` : nothing}
         <label>${t.tap}<select .value=${this.config.tap_action?.action ?? "details"} @change=${(e: Event) => this.changed({ tap_action: { action: (e.target as HTMLSelectElement).value as "details" } })}>
           ${(["details", "more-info", "navigate", "none"] as const).map(a => html`<option value=${a}>${t[a]}</option>`)}</select></label>
         ${this.config.tap_action?.action === "navigate" ? html`<label>${t.navigationPath}<input .value=${this.config.tap_action.navigation_path ?? ""} placeholder="/lovelace/waste"
