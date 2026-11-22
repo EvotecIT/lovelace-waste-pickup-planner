@@ -81,7 +81,8 @@ variables:
   max_repeats: !input max_repeats
   # The Companion app's notify action is named after the phone's original device name.
   notify_action: "notify.mobile_app_{{ device_attr(device, 'name') | slugify }}"
-  notification_tag: "WASTE_PUT_OUT_{{ this.entity_id | slugify }}"
+  # The phone's device ID is local to this HA registration. Keep the iOS tag under 64 bytes.
+  notification_tag: "waste_{{ sha256(device ~ ':' ~ this.entity_id)[:56] }}"
 
 actions:
   - action: calendar.get_events
